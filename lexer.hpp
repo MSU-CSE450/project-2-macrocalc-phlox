@@ -22,6 +22,7 @@ namespace emplex {
   private:
     static constexpr int NUM_SYMBOLS=128;
     static constexpr int NUM_STATES=42;
+    static constexpr int NUM_STATES=42;
     using row_t = std::array<int, NUM_SYMBOLS>;
   
     // DFA transition table
@@ -78,6 +79,7 @@ namespace emplex {
     constexpr static int SYMBOL_MIN_INPUT = 9; ///< Symbols below this are control symbols.
   
     static constexpr size_t size() { return 42; }
+    static constexpr size_t size() { return 42; }
     static constexpr int GetStop(int state) {
       return (state >= 0) ? stop_id[static_cast<size_t>(state)] : 0;
     }
@@ -104,6 +106,7 @@ namespace emplex {
   
   class Lexer {
   private:
+    static constexpr int NUM_TOKENS=16;
     static constexpr int NUM_TOKENS=16;
     static constexpr int ERROR_ID = -1;     ///< Code for unknown token ID.
   
@@ -153,6 +156,22 @@ namespace emplex {
       case 253: return "EndScope";
       case 254: return "StartScope";
       case 255: return "Statement";
+      case 240: return "Comment";
+      case 241: return "Equation";
+      case 242: return "Equivalent";
+      case 243: return "EndCondition";
+      case 244: return "LitString";
+      case 245: return "StartCondition";
+      case 246: return "EOL";
+      case 247: return "Value";
+      case 248: return "Equal";
+      case 249: return "VariableName";
+      case 250: return "WhiteSpace";
+      case 251: return "Var";
+      case 252: return "Print";
+      case 253: return "EndScope";
+      case 254: return "StartScope";
+      case 255: return "Statement";
       default: return "_ASCII_";
       };
     }
@@ -161,6 +180,8 @@ namespace emplex {
     static constexpr bool IgnoreToken(int id) {
       switch (id) {
       case 0:
+      case 240:
+      case 250:
       case 240:
       case 250:
         return true;
