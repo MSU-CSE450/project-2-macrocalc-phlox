@@ -1,6 +1,6 @@
 Monday
-MondayTuesday
-MondayTuesdayWednesday
-MondayTuesdayWednesdayThursday
-MondayTuesdayWednesdayThursdayFriday
-MondayTuesdayWednesdayThursdayFridaydone
+Tuesday
+Wednesday
+Thursday
+Friday
+done
