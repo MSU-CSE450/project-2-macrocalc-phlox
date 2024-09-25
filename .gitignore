@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+#Ignore current tests folder
+tests/current/
+
+#Ignore executable
+Project2
