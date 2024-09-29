@@ -36,6 +36,7 @@ int main(int argc, char * argv[])
   bool value_change = false;
   std::string current_variable;
   std::map<std::string, int> mp;
+  bool is_float = false;
   for (emplex::Token token: tokens)
   {
     if(token.id != -1){
@@ -91,7 +92,7 @@ int main(int argc, char * argv[])
         }
         if(token.id == 247)
         {
-          mp[current_variable] = atoi(token.lexeme.c_str());
+            mp[current_variable] = atoi(token.lexeme.c_str());
           //std::cout << current_variable;
         }
       }
