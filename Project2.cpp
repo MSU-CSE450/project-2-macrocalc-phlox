@@ -11,6 +11,11 @@
 #include "lexer.hpp"
 #include "SymbolTable.hpp"
 
+void Error(size_t line_num, std::string message) {                // https://github.com/MSU-CSE450/WordLang/blob/main/WordLang.cpp
+  std::cerr << "ERROR (line " << line_num << "): " << message << std::endl;
+  exit(1);
+}
+
 bool endsWith(const std::string& fullString, const std::string& ending) //https://www.geeksforgeeks.org/check-if-string-ends-substring-in-cpp/
 {
     // Check if the ending string is longer than the full
