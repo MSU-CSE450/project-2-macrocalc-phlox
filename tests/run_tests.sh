@@ -33,7 +33,7 @@ for i in $(seq -w 01 $test_count); do
     # Make sure files exist
     if [[ -f "$expected_file" && -f "$out_file" ]]; then
         # Compare the files
-        if ! diff -q "$expected_file" "$out_file" > /dev/null; then
+        if ! diff -q -b "$expected_file" "$out_file" > /dev/null; then
             echo "Test $i ... Failed.  Files $expected_file and $out_file differ."
             ((fail_count++))
         else

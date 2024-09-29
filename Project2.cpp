@@ -11,7 +11,6 @@
 #include "lexer.hpp"
 #include "SymbolTable.hpp"
 
-
 int main(int argc, char * argv[])
 {
   if (argc != 2) {
@@ -35,8 +34,7 @@ int main(int argc, char * argv[])
   auto symbol_table = SymbolTable();
   bool value_change = false;
   std::string current_variable;
-  std::map<std::string, int> mp;
-  bool is_float = false;
+  std::map<std::string, std::string> mp;
   for (emplex::Token token: tokens)
   {
     if(token.id != -1){
@@ -67,7 +65,7 @@ int main(int argc, char * argv[])
       }
       else if(condition_active and token.id == 249 and print_active)
       {
-        output_string += std::to_string(mp[token.lexeme]);
+        output_string += mp[token.lexeme];
       }
       else if(token.id == 246) //semicolon (end of line) detected 
       {
@@ -92,16 +90,18 @@ int main(int argc, char * argv[])
         }
         if(token.id == 247)
         {
-            mp[current_variable] = atoi(token.lexeme.c_str());
-          //std::cout << current_variable;
+          mp[current_variable] = token.lexeme;
         }
       }
     }
 
   }
-
+  /*
+  for( auto [key, value] : mp){
+    std::cout << "Key: " << key << " and Value: " << value << std::endl;
+  }
+  */
   // TO DO:  
   // PARSE input file to create Abstract Syntax Tree (AST).
   // EXECUTE the AST to run your program.
-  
 }
