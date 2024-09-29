@@ -53,7 +53,7 @@ int main(int argc, char * argv[])
   std::string output_string;
   auto symbol_table = SymbolTable();
   bool value_change = false;
-  std::string current_variable;
+  std::string current_variable = "";
   std::map<std::string, std::string> mp;
   for (emplex::Token token: tokens)
   {
@@ -89,6 +89,7 @@ int main(int argc, char * argv[])
       }
       else if(token.id == 246) //semicolon (end of line) detected 
       {
+        current_variable = "";
         if(print_active) //if print statement
         {
           print_active = false;
@@ -104,18 +105,23 @@ int main(int argc, char * argv[])
       }
       else if(value_change == true) //if a value change is ongoing
       {
-        if(token.id == 249) // if a variable name is detected
+        if(token.id == 249 and current_variable == "") // if a variable name is detected
         {
-          current_variable = token.lexeme;
+          current_variable = token.lexeme; //current variable is set
         }
-        if(token.id == 247)
+        else if(token.id == 249 and current_variable != "")
+        {
+          mp[current_variable] = mp[token.lexeme];
+        }
+        else if(token.id == 247) //if a value is detected
         {
           std::string extra = ".0";
-          if(endsWith(token.lexeme, extra)){
-            token.lexeme.pop_back();
-            token.lexeme.pop_back();
+          if(endsWith(token.lexeme, extra)) //if value ends with ".0"
+          {
+            token.lexeme.pop_back(); // removing trailing 0
+            token.lexeme.pop_back(); // remove decimal
           }
-          mp[current_variable] = token.lexeme;
+          mp[current_variable] = token.lexeme; //sets map value to token.lexeme
         }
       }
     }
