@@ -32,7 +32,7 @@
 *.app
 
 #Ignore current tests folder
-tests/current/
+#..tests/current/
 
 #Ignore executable
-Project2
+#Project2
