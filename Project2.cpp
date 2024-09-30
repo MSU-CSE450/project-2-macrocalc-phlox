@@ -16,6 +16,7 @@ void Error(size_t line_num, std::string message) {                // https://git
   exit(1);
 }
 
+
 bool endsWith(const std::string& fullString, const std::string& ending) //https://www.geeksforgeeks.org/check-if-string-ends-substring-in-cpp/
 {
     // Check if the ending string is longer than the full
@@ -25,11 +26,9 @@ bool endsWith(const std::string& fullString, const std::string& ending) //https:
 
     // Compare the ending of the full string with the target
     // ending
-    return fullString.compare(fullString.size()
-                                  - ending.size(),
-                              ending.size(), ending)
-           == 0;
+    return fullString.compare(fullString.size() - ending.size(), ending.size(), ending) == 0;
 }
+
 
 int main(int argc, char * argv[])
 {
