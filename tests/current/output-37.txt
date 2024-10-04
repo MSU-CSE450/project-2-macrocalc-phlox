@@ -1,2 +1,0 @@
-{value} is PRIME.
-{value} is NOT prime ({value} / {test_val} = {result}).

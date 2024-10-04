@@ -7,7 +7,6 @@
 
 // Below are some suggestions on how you might want to divide up your project.
 // You may delete this and divide it up however you like.
-#include "ASTNode.hpp"
 #include "lexer.hpp"
 #include "SymbolTable.hpp"
 
@@ -29,7 +28,13 @@ bool endsWith(const std::string& fullString, const std::string& ending) //https:
     return fullString.compare(fullString.size() - ending.size(), ending.size(), ending) == 0;
 }
 
-
+template <typename... Ts>
+void Error(size_t line_num, Ts... message) {
+  std::cerr << "ERROR (line " << line_num << "): ";
+  (std::cerr << ... << message);
+  std::cerr << std::endl;
+  exit(1);
+}
 int main(int argc, char * argv[])
 {
   if (argc != 2) {
@@ -47,16 +52,14 @@ int main(int argc, char * argv[])
   std::ifstream input(filename);
   emplex::Lexer lexer;
   std::vector<emplex::Token> tokens = lexer.Tokenize(input);
-  bool print_active = false;
-  bool condition_active = false;
   std::string output_string;
   auto symbol_table = SymbolTable();
-  bool value_change = false;
-  std::string current_variable = "";
-  std::map<std::string, std::string> mp;
   for (emplex::Token token: tokens)
   {
-    if(token.id != -1){
+    
+  }
+  /*
+  if(token.id != -1){
       if(token.id == 252) //ID Print detected
       {
         print_active = true; //says print is active
@@ -82,20 +85,24 @@ int main(int argc, char * argv[])
       {
         output_string += token.lexeme;
       }
-      else if(condition_active and token.id == 249 and print_active)
+      else if(condition_active and token.id == 249 and print_active) //if printing a variable
       {
         output_string += mp[token.lexeme];
+      }
+      else if(condition_active and token.id == 241) //if an equation in print statement
+      {
+        AST(token.lexeme, mp);
       }
       else if(token.id == 246) //semicolon (end of line) detected 
       {
         current_variable = "";
+        value_change = false;
         if(print_active) //if print statement
         {
           print_active = false;
           std::cout << output_string << std::endl;
           condition_active = false;
           output_string = "";
-          value_change = false;
         }
       }
       else if(token.id == 251) //var keyword detected
@@ -124,12 +131,6 @@ int main(int argc, char * argv[])
         }
       }
     }
-
-  }
-  /*
-  for( auto [key, value] : mp){
-    std::cout << "Key: " << key << " and Value: " << value << std::endl;
-  }
   */
   // TO DO:  
   // PARSE input file to create Abstract Syntax Tree (AST).
