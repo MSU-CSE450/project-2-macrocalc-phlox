@@ -1,0 +1,2 @@
+c_square = {c_square}
+side a = {a}, side b = {b}, so side c = {c}

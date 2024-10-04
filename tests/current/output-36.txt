@@ -1,0 +1,3 @@
+Start value = {n}
+Step {count}: {n}
+Steps to reach 1: {count}
