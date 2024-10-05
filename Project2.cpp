@@ -11,7 +11,6 @@
 #include "lexer.hpp"
 #include "SymbolTable.hpp"
 
-
 int main(int argc, char * argv[])
 {
   if (argc != 2) {
@@ -26,6 +25,8 @@ int main(int argc, char * argv[])
     std::cout << "ERROR: Unable to open file '" << filename << "'." << std::endl;
     exit(1);
   }
+
+
 
   // TO DO:  
   // PARSE input file to create Abstract Syntax Tree (AST).
