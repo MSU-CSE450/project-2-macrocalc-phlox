@@ -95,17 +95,26 @@ int main(int argc, char * argv[])
   std::string current_variable = "";
   bool value_change = false;
   std::map<std::string, std::string> mp;
+  bool equal = false;
+  bool statement = false;
   for (emplex::Token token: tokens)
   {
-    if(token.id == 245) //If start condition active
-    {
-      //auto A = ASTNode(1);
-      //std::cout << A.NodeType() << std::endl;
-      if(token.id != -1)
-      {
-      if(token.id == 252) //ID Print detected
+    if(token.id != -1){
+      if(token.id == 252 and !print_active) //ID Print detected
       {
         print_active = true; //says print is active
+      }
+      else if(token.id == 255 and !statement)
+      {
+        statement = true;
+      }
+      else if(statement == true)
+      {
+        if(token.id == 255)
+        {
+          std::cerr << "cannot put conditional within condtitional" << std::endl;
+          exit(1);
+        }
       }
       else if(print_active and token.id == 245) //detects open parentheses for print statement
       {
@@ -131,12 +140,14 @@ int main(int argc, char * argv[])
       else if(condition_active and token.id == 249 and print_active) //if printing a variable
       {
         output_string += mp[token.lexeme];
+        current_variable = token.lexeme;
       }
       else if(condition_active and token.id == 241) //if an equation in print statement
       {
         //AST(token.lexeme, mp);
+        std::cout << current_variable;
       }
-      else if(token.id == 246) //semicolon (end of line) detected 
+      else if(token.id == 246 and condition_active == false) //semicolon (end of line) detected 
       {
         current_variable = "";
         value_change = false;
@@ -148,6 +159,11 @@ int main(int argc, char * argv[])
           output_string = "";
         }
       }
+      else if(print_active and token.id == 252)
+      {
+        std::cerr << std::endl;
+        exit(1);
+      }
       else if(token.id == 251) //var keyword detected
       {
         value_change = true; //indicates value is being changed
@@ -158,11 +174,25 @@ int main(int argc, char * argv[])
         {
           current_variable = token.lexeme; //current variable is set
         }
-        else if(token.id == 249 and current_variable != "")
+        else if(token.id == 249 and current_variable != "" and equal)
         {
           mp[current_variable] = mp[token.lexeme];
         }
-        else if(token.id == 247) //if a value is detected
+        else if (token.id == 248)
+        {
+          equal = true;
+        }
+        else if(token.id == 249 and !equal)
+        {
+          std::cerr << "AAAAAA" << std::endl;
+          exit(1);
+        }
+        else if(token.id == 247 and current_variable == "")
+        {
+          std::cerr << "You cannot make a variable name a number" << std::endl;
+          exit(1);
+        }
+        else if(token.id == 247 and current_variable != "" and equal) //if a value is detected
         {
           std::string extra = ".0";
           if(endsWith(token.lexeme, extra)) //if value ends with ".0"
@@ -174,8 +204,11 @@ int main(int argc, char * argv[])
         }
       }
     }
-     
-  }
+    // if(token.id == 245) //If start condition active
+    // {
+    //   //auto A = ASTNode(1);
+    //   //std::cout << A.NodeType() << std::endl;
+    // }
   /*
   
   */
