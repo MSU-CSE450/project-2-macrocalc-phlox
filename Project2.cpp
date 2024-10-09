@@ -94,17 +94,17 @@ int main(int argc, char * argv[])
   bool condition_active = false;
   std::string current_variable = "";
   bool value_change = false;
-  std::map<std::string, std::string> mp;
+  std::unordered_map<std::string, std::string> mp;
   bool equal = false;
   bool statement = false;
   for (emplex::Token token: tokens)
   {
     if(token.id != -1){
-      if(token.id == 252 and !print_active) //ID Print detected
+      if(token.id == 252 && !print_active) //ID Print detected
       {
         print_active = true; //says print is active
       }
-      else if(token.id == 255 and !statement)
+      else if(token.id == 255 && !statement)
       {
         statement = true;
       }
@@ -116,7 +116,7 @@ int main(int argc, char * argv[])
           exit(1);
         }
       }
-      else if(print_active and token.id == 245) //detects open parentheses for print statement
+      else if(print_active && token.id == 245) //detects open parentheses for print statement
       {
         condition_active = true;
       }
@@ -124,7 +124,7 @@ int main(int argc, char * argv[])
       {
         condition_active = false;
       }
-      else if(condition_active and token.id == 244 and print_active) //if printing a literal string
+      else if(condition_active && token.id == 244 && print_active) //if printing a literal string
       {
         for(auto ch : token.lexeme)
         {
@@ -133,21 +133,21 @@ int main(int argc, char * argv[])
           }
         }
       }
-      else if(condition_active and token.id == 247 and print_active) //if printing number
+      else if(condition_active && token.id == 247 && print_active) //if printing number
       {
         output_string += token.lexeme;
       }
-      else if(condition_active and token.id == 249 and print_active) //if printing a variable
+      else if(condition_active && token.id == 249 && print_active) //if printing a variable
       {
         output_string += mp[token.lexeme];
         current_variable = token.lexeme;
       }
-      else if(condition_active and token.id == 241) //if an equation in print statement
+      else if(condition_active && token.id == 241) //if an equation in print statement
       {
         //AST(token.lexeme, mp);
         std::cout << current_variable;
       }
-      else if(token.id == 246 and condition_active == false) //semicolon (end of line) detected 
+      else if(token.id == 246 && condition_active == false) //semicolon (end of line) detected 
       {
         current_variable = "";
         value_change = false;
@@ -159,7 +159,7 @@ int main(int argc, char * argv[])
           output_string = "";
         }
       }
-      else if(print_active and token.id == 252)
+      else if(print_active && token.id == 252)
       {
         std::cerr << std::endl;
         exit(1);
@@ -170,11 +170,11 @@ int main(int argc, char * argv[])
       }
       else if(value_change == true) //if a value change is ongoing
       {
-        if(token.id == 249 and current_variable == "") // if a variable name is detected
+        if(token.id == 249 && current_variable == "") // if a variable name is detected
         {
           current_variable = token.lexeme; //current variable is set
         }
-        else if(token.id == 249 and current_variable != "" and equal)
+        else if(token.id == 249 && current_variable != "" && equal)
         {
           mp[current_variable] = mp[token.lexeme];
         }
@@ -182,17 +182,17 @@ int main(int argc, char * argv[])
         {
           equal = true;
         }
-        else if(token.id == 249 and !equal)
+        else if(token.id == 249 && !equal)
         {
           std::cerr << "AAAAAA" << std::endl;
           exit(1);
         }
-        else if(token.id == 247 and current_variable == "")
+        else if(token.id == 247 && current_variable == "")
         {
           std::cerr << "You cannot make a variable name a number" << std::endl;
           exit(1);
         }
-        else if(token.id == 247 and current_variable != "" and equal) //if a value is detected
+        else if(token.id == 247 && current_variable != "" && equal) //if a value is detected
         {
           std::string extra = ".0";
           if(endsWith(token.lexeme, extra)) //if value ends with ".0"

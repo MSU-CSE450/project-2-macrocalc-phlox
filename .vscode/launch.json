@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/Owner/Documents/GitHub/project-2-macrocalc-phlox",
-      "program": "c:/Users/Owner/Documents/GitHub/project-2-macrocalc-phlox/build/Debug/outDebug",
+      "cwd": "c:/Users/hjb20/OneDrive/Documents/GitHub/project-2-macrocalc-phlox",
+      "program": "c:/Users/hjb20/OneDrive/Documents/GitHub/project-2-macrocalc-phlox/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
