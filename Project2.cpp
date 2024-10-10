@@ -11,6 +11,34 @@
 #include "lexer.hpp"
 #include "SymbolTable.hpp"
 
+class MacroCalc {
+  private:
+    size_t token_id = 0;
+    std::vector<emplex::Token> tokens;
+
+
+
+
+  public:
+    MacroCalc(std::string filename) { // Looked at WordLang.cpp for this
+      std::ifstream file(filename);
+      emplex::Lexer lexer;
+      tokens = lexer.Tokenize(file);
+
+      Parse();
+
+    }
+
+    void Parse() {
+      while(token_id < tokens.size()) {
+        //std::cout << tokens[token_id] << std::endl;
+        token_id++;
+      }
+
+    }
+
+};
+
 int main(int argc, char * argv[])
 {
   if (argc != 2) {
@@ -31,5 +59,13 @@ int main(int argc, char * argv[])
   // TO DO:  
   // PARSE input file to create Abstract Syntax Tree (AST).
   // EXECUTE the AST to run your program.
+
+  MacroCalc calc(filename);
+
+
+
+
+
+
   
 }
