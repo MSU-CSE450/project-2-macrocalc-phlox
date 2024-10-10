@@ -8,10 +8,10 @@
 #include "SymbolTable.hpp"
 
 class ASTNode {
-private:
-  // PLACE AST NODE INFO HERE.
+  public:
   enum Type {
     EMPTY=0,
+    STATEMENT_BLOCK,
     START_COND,
     END_COND,
     EXP,
@@ -22,8 +22,12 @@ private:
     SUB,
     ASSIGN,
     VAR,
-    LITERAL
+    LITERAL,
+
   };
+private:
+  // PLACE AST NODE INFO HERE.
+  
 
   Type type{EMPTY};
   size_t val{0};
