@@ -1,4 +1,5 @@
 #include <assert.h>
+
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -8,8 +9,8 @@
 // Below are some suggestions on how you might want to divide up your project.
 // You may delete this and divide it up however you like.
 #include "ASTNode.hpp"
-#include "lexer.hpp"
 #include "SymbolTable.hpp"
+#include "lexer.hpp"
 
 template <typename... Ts>
 void Error(size_t line_num, Ts... message) {
@@ -20,107 +21,135 @@ void Error(size_t line_num, Ts... message) {
 }
 
 class MacroCalc {
-  private:
-    size_t token_id = 0;
-    std::vector<emplex::Token> tokens;
-    std::vector<emplex::Token> tokens{};
-    size_t token_id{0};
-    ASTNode root{ASTNode::STATEMENT_BLOCK};
+ private:
+  size_t token_id = 0;
+  std::vector<emplex::Token> tokens{};
+  ASTNode root{ASTNode::STATEMENT_BLOCK};
 
-    SymbolTable symbols{};
+  SymbolTable symbols{};
 
-    // === HELPER FUNCTIONS ===
+  // === HELPER FUNCTIONS ===
 
-    std::string TokenName(int id) const {
-      if (id > 0 && id < 128) {
-        return std::string("'") + static_cast<char>(id) + "'";
-      }
-      return emplex::Lexer::TokenName(id);
+  std::string TokenName(int id) const {
+    if (id > 0 && id < 128) {
+      return std::string("'") + static_cast<char>(id) + "'";
     }
+    return emplex::Lexer::TokenName(id);
+  }
 
-    emplex::Token CurToken() const { return tokens[token_id]; }
+  emplex::Token CurToken() const { return tokens[token_id]; }
 
-    emplex::Token UseToken() { return tokens[token_id++]; }
+  emplex::Token UseToken() { return tokens[token_id++]; }
 
-    emplex::Token UseToken(int required_id, std::string err_message="") {
-      if (CurToken() != required_id) {
-        if (err_message.size()) Error(CurToken(), err_message);
-        else {
-          Error(CurToken(),
-            "Expected token type ", TokenName(required_id),
-            ", but found ", TokenName(CurToken())
-          );
-        }
+  emplex::Token UseToken(int required_id, std::string err_message = "") {
+    if (CurToken() != required_id) {
+      if (err_message.size())
+        Error(CurToken(), err_message);
+      else {
+        Error(CurToken(), "Expected token type ", TokenName(required_id),
+              ", but found ", TokenName(CurToken()));
       }
-      return UseToken();
     }
+    return UseToken();
+  }
 
-    bool UseTokenIf(int test_id) {
-      if (CurToken() == test_id) {
+  bool UseTokenIf(int test_id) {
+    if (CurToken() == test_id) {
+      token_id++;
+      return true;
+    }
+    return false;
+  }
+
+  ASTNode MakeVarNode(const emplex::Token& token) {
+    size_t var_id = symbols.GetVarID(token.lexeme);
+    assert(var_id < symbols.GetNumVars());
+    ASTNode out(ASTNode::VAR);
+    out.SetVal(var_id);
+    return out;
+  }
+
+ public:
+  MacroCalc(std::string filename) {  // Looked at WordLang.cpp for this
+    std::ifstream file(filename);
+    emplex::Lexer lexer;
+    tokens = lexer.Tokenize(file);
+
+    Parse();
+  }
+
+  void Parse() {
+    while (token_id < tokens.size()) {
+        ASTNode cur_node = ParseStatement();
         token_id++;
-        return true;
-      }
-      return false;
+        if (cur_node.NodeType()) root.AddChild(cur_node);
     }
+  }
 
-    ASTNode MakeVarNode(const emplex::Token & token) {
-      size_t var_id = symbols.GetVarID(token.lexeme);
-      assert(var_id < symbols.GetNumVars());
-      ASTNode out(ASTNode::VAR);
-      out.SetVal(var_id);
-      return out;
+  ASTNode ParseStatement() {
+    switch (CurToken()) {
+      using namespace emplex;
+      case Lexer::ID_Print:
+        return ParsePrint();
+
+      /*
+      case Lexer::ID_Type:
+        return ParseDeclare();
+      // case Lexer::ID_IF: return ParseIf();
+      // case Lexer::ID_WHILE: return ParseWhile();
+      case '{':
+        return ParseStatementBlock();
+      case ';':
+        return ASTNode{};
+      */
+      default:
+        return ParseExpression();
     }
+  }
+
+  ASTNode ParsePrint() {
+    std::cout << "Print" << std::endl;
 
 
 
+    return ASTNode{ASTNode::PRINT};
 
-  public:
-    MacroCalc(std::string filename) { // Looked at WordLang.cpp for this
-      std::ifstream file(filename);
-      emplex::Lexer lexer;
-      tokens = lexer.Tokenize(file);
+  }
 
-      Parse();
+  ASTNode ParseDeclare() {
+    std::cout << "Print" << std::endl;
 
-    }
 
-    void Parse() {
-      while(token_id < tokens.size()) {
-        //std::cout << tokens[token_id] << std::endl;
-        token_id++;
-      }
 
-    }
+    return ASTNode{ASTNode::PRINT};
+
+  }
+
+  ASTNode ParseExpression() {
+    return ASTNode{0};
+  }
+
 
 };
 
-int main(int argc, char * argv[])
-{
+int main(int argc, char* argv[]) {
   if (argc != 2) {
     std::cout << "Format: " << argv[0] << " [filename]" << std::endl;
     exit(1);
   }
 
   std::string filename = argv[1];
-  
-  std::ifstream in_file(filename);              // Load the input file
+
+  std::ifstream in_file(filename);  // Load the input file
   if (in_file.fail()) {
-    std::cout << "ERROR: Unable to open file '" << filename << "'." << std::endl;
+    std::cout << "ERROR: Unable to open file '" << filename << "'."
+              << std::endl;
     exit(1);
   }
 
-
-
-  // TO DO:  
+  // TO DO:
   // PARSE input file to create Abstract Syntax Tree (AST).
   // EXECUTE the AST to run your program.
 
   MacroCalc calc(filename);
-
-
-
-
-
-
-  
 }

@@ -23,6 +23,7 @@ class ASTNode {
     ASSIGN,
     VAR,
     LITERAL,
+    PRINT,
 
   };
 private:
