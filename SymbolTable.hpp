@@ -49,7 +49,7 @@ public:
     //  std::cerr << "ERROR (line " << line_num << "): Redeclaring variable '" << name << "'." << std::endl;
     //}
     size_t var_id = var_info.size();
-    var_info.emplace_back(name, line_num);
+    var_info.emplace_back(VarData {name, line_num});
     curr_scope[name] = var_id;
     return var_id;
   }

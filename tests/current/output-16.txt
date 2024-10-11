@@ -1,2 +1,2 @@
-Print
-Print
+0
+10

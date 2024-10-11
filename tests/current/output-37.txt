@@ -1,2 +1,6 @@
-Print
-Print
+1
+2
+1
+0.5
+0
+{value} is PRIME.

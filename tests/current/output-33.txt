@@ -1,2 +1,4 @@
-Print
-Print
+27
+2
+2
+side a = {a}, side b = {b}, so side c = {c}

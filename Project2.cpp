@@ -108,6 +108,17 @@ class MacroCalc {
   }
 
   ASTNode ParsePrint() {
+    ASTNode print_node(ASTNode::PRINT);
+
+    UseToken(emplex::Lexer::ID_Print);
+    UseToken(245);
+    do{
+      print_node.AddChild( ParseExpression() );
+    }while (UseTokenIf(','));
+    UseToken(243);
+    UseToken(246);
+
+    return print_node;
     std::cout << "Print" << std::endl;
 
 
@@ -126,7 +137,36 @@ class MacroCalc {
   }
 
   ASTNode ParseExpression() {
+    ASTNode term_node = ParseTerm();
+
+    // @CAO - Need to handle operators.
+
+    return term_node;
+    std::cout << "HIIIII" << std::endl;
     return ASTNode{0};
+  }
+  ASTNode ParseTerm() {
+    auto token = UseToken();
+    switch(token)
+    {
+      case 247: {
+        std::cout << token.lexeme << std::endl;
+        break;
+      }
+      case 244:{
+        for(auto ch : token.lexeme)
+        {
+          if(ch != '"')
+          {
+            std::cout << ch;
+          }
+        }
+        std::cout << std::endl;
+        break;
+      }
+
+    }
+    return ASTNode{};
   }
 
 

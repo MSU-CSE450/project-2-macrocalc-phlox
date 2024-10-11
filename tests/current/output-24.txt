@@ -1,1 +1,4 @@
-Print
+1
+3
+5
+ONE:{one}, TWO:{two}, THREE:{three}, FOUR:{four}, FIVE:{five}, SIX:{six}

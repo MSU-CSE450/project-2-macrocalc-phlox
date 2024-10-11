@@ -1,6 +1,7 @@
-Print
-Print
-Print
-Print
-Print
-Print
+10
+Monday
+Tuesday
+Wednesday
+Thursday
+Friday
+done

@@ -1,6 +1,10 @@
-Print
-Print
-Print
-Print
-Print
-Print
+10
+5
+2: a = {a}
+2
+9
+8
+21
+10
+4: a = {a}
+Whoops!
