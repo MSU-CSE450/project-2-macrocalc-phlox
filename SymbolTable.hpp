@@ -55,7 +55,8 @@ public:
   }
   double GetValue(std::string name) const {
     assert(HasVar(name));
-    return 0.0;
+    auto mp = scope.back();
+    return mp[name];
   }
   void SetValue(std::string name, double value) { 
     std::unordered_map<std::string, double> curr_map = PopScope();

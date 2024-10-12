@@ -79,54 +79,41 @@ class MacroCalc {
   }
 
   void Parse() {
-    while (token_id < tokens.size()) {
-        ASTNode cur_node = ParseStatement();
-        token_id++;
-        if (cur_node.NodeType()) root.AddChild(cur_node);
+    for(auto token : tokens)
+    {
+      ParseStatement();
     }
   }
 
-  ASTNode ParseStatement() {
+  void ParseStatement() {
     switch (CurToken()) {
       using namespace emplex;
       case Lexer::ID_Print:
+      {
         ParsePrint();
         break;
+      }
       case Lexer::ID_Var:
+      {
         ParseDeclare();
         break;
+      }
       // case Lexer::ID_IF: return ParseIf();
       // case Lexer::ID_WHILE: return ParseWhile();
       // case '{':
       //   //return ParseStatementBlock();
       // case ';':
       //   return ASTNode{};
-      
-      default:
-        ParseExpression();
+      // default:
+      // {
+      //   ParseExpression();
+      //   break;
+      // }
     }
   }
 
-  ASTNode ParsePrint() {
-    // ASTNode print_node(ASTNode::PRINT);
-
-    // UseToken(emplex::Lexer::ID_Print);
-    // UseToken(245);
-    // do{
-    //   print_node.AddChild( ParseExpression() );
-    // }while (UseTokenIf(','));
-    // UseToken(243);
-    // UseToken(246);
-
-    // return print_node;
-    // std::cout << "Print" << std::endl;
-
-
-
-    // return ASTNode{ASTNode::PRINT};
-
+  void ParsePrint() {
     UseToken(emplex::Lexer::ID_Print);
-    std::cout << "HIIII";
         
     if (CurToken().id == emplex::Lexer::ID_LitString) {
         // Handle string output with variable replacement
@@ -169,7 +156,7 @@ class MacroCalc {
   double ParseAddition() {
       double left = ParseMult();
 
-      while (CurToken().lexeme == "+" || CurToken().lexeme == "-") {
+      while (CurToken().lexeme == "+" or CurToken().lexeme == "-") {
           auto op = CurToken().lexeme;
           UseToken(CurToken().id);  // Consume '+' or '-'
           double right = ParseMult();
@@ -187,7 +174,7 @@ class MacroCalc {
   double ParseMult() {
       double left = ParsePrim();
 
-      while (CurToken().lexeme == "*" || CurToken().lexeme == "/" || CurToken().lexeme == "**") {
+      while (CurToken().lexeme == "*" or CurToken().lexeme == "/" or CurToken().lexeme == "**") {
           auto op = CurToken().lexeme;
           UseToken(CurToken().id);  // Consume '*', '/', or '**'
           double right = ParsePrim();
@@ -210,26 +197,26 @@ class MacroCalc {
   // Parse primary expressions (e.g., numbers, variables, or parenthesized expressions)
   double ParsePrim() {
       if (CurToken().id == emplex::Lexer::ID_Value) {
-          double value = std::stod(CurToken().lexeme);  // Convert to double
-          UseToken(emplex::Lexer::ID_Value);
-          return value;
-      } else if (CurToken().id == emplex::Lexer::ID_VariableName) {
-          std::string varName = CurToken().lexeme;
-          UseToken(emplex::Lexer::ID_VariableName);
+        double value = std::stod(CurToken().lexeme);  // Convert token to double
+        UseToken(emplex::Lexer::ID_Value);  // Consume the numeric value token
+        return value;
+    } else if (CurToken().id == emplex::Lexer::ID_VariableName) {
+        std::string varName = CurToken().lexeme;
+        UseToken(emplex::Lexer::ID_VariableName);
 
-          if (!symbols.HasVar(varName)) {
-              std::cerr;
-          }
-
-          return symbols.GetValue(varName);  // Return the value of the variable
-      } else if (CurToken().id == emplex::Lexer::ID_StartCondition) {
-          UseToken(emplex::Lexer::ID_StartCondition);
-          double expr = ParseExpression();
-          UseToken(emplex::Lexer::ID_EndCondition);
-          return expr;
-      }
-
-      std::cerr;
+        if (!symbols.HasVar(varName)) {
+            Error(token_id, "Undefined variable: ", varName);
+        }
+        return symbols.GetValue(varName);  // Return the value of the variable
+    } else if (CurToken().id == emplex::Lexer::ID_StartCondition) {
+        UseToken(emplex::Lexer::ID_StartCondition);
+        double expr = ParseExpression();  // Parse expression inside parentheses
+        UseToken(emplex::Lexer::ID_EndCondition);  // Expect closing parenthesis
+        return expr;
+    }
+    else if(CurToken().id != emplex::Lexer::ID__EOF_){
+        Error(token_id, "Unexpected token in primary expression: ", TokenName(CurToken().id));
+    }
   }
 };
 
