@@ -1,7 +1,0 @@
-10
-Monday
-Tuesday
-Wednesday
-Thursday
-Friday
-done

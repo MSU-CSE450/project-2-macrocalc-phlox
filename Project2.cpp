@@ -1,5 +1,5 @@
 #include <assert.h>
-
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -90,86 +90,147 @@ class MacroCalc {
     switch (CurToken()) {
       using namespace emplex;
       case Lexer::ID_Print:
-        return ParsePrint();
-
-      /*
-      case Lexer::ID_Type:
-        return ParseDeclare();
+        ParsePrint();
+        break;
+      case Lexer::ID_Var:
+        ParseDeclare();
+        break;
       // case Lexer::ID_IF: return ParseIf();
       // case Lexer::ID_WHILE: return ParseWhile();
-      case '{':
-        return ParseStatementBlock();
-      case ';':
-        return ASTNode{};
-      */
+      // case '{':
+      //   //return ParseStatementBlock();
+      // case ';':
+      //   return ASTNode{};
+      
       default:
-        return ParseExpression();
+        ParseExpression();
     }
   }
 
   ASTNode ParsePrint() {
-    ASTNode print_node(ASTNode::PRINT);
+    // ASTNode print_node(ASTNode::PRINT);
+
+    // UseToken(emplex::Lexer::ID_Print);
+    // UseToken(245);
+    // do{
+    //   print_node.AddChild( ParseExpression() );
+    // }while (UseTokenIf(','));
+    // UseToken(243);
+    // UseToken(246);
+
+    // return print_node;
+    // std::cout << "Print" << std::endl;
+
+
+
+    // return ASTNode{ASTNode::PRINT};
 
     UseToken(emplex::Lexer::ID_Print);
-    UseToken(245);
-    do{
-      print_node.AddChild( ParseExpression() );
-    }while (UseTokenIf(','));
-    UseToken(243);
-    UseToken(246);
-
-    return print_node;
-    std::cout << "Print" << std::endl;
-
-
-
-    return ASTNode{ASTNode::PRINT};
-
-  }
-
-  ASTNode ParseDeclare() {
-    std::cout << "Print" << std::endl;
-
-
-
-    return ASTNode{ASTNode::PRINT};
-
-  }
-
-  ASTNode ParseExpression() {
-    ASTNode term_node = ParseTerm();
-
-    // @CAO - Need to handle operators.
-
-    return term_node;
-    std::cout << "HIIIII" << std::endl;
-    return ASTNode{0};
-  }
-  ASTNode ParseTerm() {
-    auto token = UseToken();
-    switch(token)
-    {
-      case 247: {
-        std::cout << token.lexeme << std::endl;
-        break;
-      }
-      case 244:{
-        for(auto ch : token.lexeme)
-        {
-          if(ch != '"')
-          {
-            std::cout << ch;
-          }
-        }
-        std::cout << std::endl;
-        break;
-      }
-
+    std::cout << "HIIII";
+        
+    if (CurToken().id == emplex::Lexer::ID_LitString) {
+        // Handle string output with variable replacement
+        std::string output = CurToken().lexeme;
+        UseToken(emplex::Lexer::ID_LitString);
+        std::cout << output << std::endl;
+     } 
+    else {
+        // Handle expression output
+        double value = ParseExpression();
+        std::cout << value << std::endl;
     }
-    return ASTNode{};
+
+    UseToken(emplex::Lexer::ID_EOL);  // Expect a semicolon
+
   }
 
+  void ParseDeclare() {
+        UseToken(emplex::Lexer::ID_Var);  // Consume 'var'
+        std::string varName = CurToken().lexeme;
+        UseToken(emplex::Lexer::ID_VariableName);  // Consume identifier
+        
+        // Register the variable with the symbol table
+        symbols.AddVar(varName);
 
+        if(CurToken().id == emplex::Lexer::ID_Equal) {
+            UseToken(emplex::Lexer::ID_Equal);  // Consume '='
+            double value = ParseExpression();  // Parse the expression
+            symbols.SetValue(varName, value);  // Assign the value to the variable
+        }
+
+        UseToken(emplex::Lexer::ID_EOL);  // Consume ';'
+    }
+
+  double ParseExpression() {
+          return ParseAddition();
+      }
+
+    // Parse additive expressions (e.g., addition and subtraction)
+  double ParseAddition() {
+      double left = ParseMult();
+
+      while (CurToken().lexeme == "+" || CurToken().lexeme == "-") {
+          auto op = CurToken().lexeme;
+          UseToken(CurToken().id);  // Consume '+' or '-'
+          double right = ParseMult();
+
+          if (op == "+") {
+              left += right;
+          } else {
+              left -= right;
+          }
+      }
+
+      return left;
+  }
+
+  double ParseMult() {
+      double left = ParsePrim();
+
+      while (CurToken().lexeme == "*" || CurToken().lexeme == "/" || CurToken().lexeme == "**") {
+          auto op = CurToken().lexeme;
+          UseToken(CurToken().id);  // Consume '*', '/', or '**'
+          double right = ParsePrim();
+
+          if (op == "*") {
+              left *= right;
+          } else if (op == "/") {
+              if (right == 0) {
+                  std::cerr;
+              }
+              left /= right;
+          } else if (op == "**") {
+              left = pow(left, right);
+          }
+      }
+
+      return left;
+  }
+
+  // Parse primary expressions (e.g., numbers, variables, or parenthesized expressions)
+  double ParsePrim() {
+      if (CurToken().id == emplex::Lexer::ID_Value) {
+          double value = std::stod(CurToken().lexeme);  // Convert to double
+          UseToken(emplex::Lexer::ID_Value);
+          return value;
+      } else if (CurToken().id == emplex::Lexer::ID_VariableName) {
+          std::string varName = CurToken().lexeme;
+          UseToken(emplex::Lexer::ID_VariableName);
+
+          if (!symbols.HasVar(varName)) {
+              std::cerr;
+          }
+
+          return symbols.GetValue(varName);  // Return the value of the variable
+      } else if (CurToken().id == emplex::Lexer::ID_StartCondition) {
+          UseToken(emplex::Lexer::ID_StartCondition);
+          double expr = ParseExpression();
+          UseToken(emplex::Lexer::ID_EndCondition);
+          return expr;
+      }
+
+      std::cerr;
+  }
 };
 
 int main(int argc, char* argv[]) {

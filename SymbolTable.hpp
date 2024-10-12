@@ -43,13 +43,13 @@ public:
     return NO_ID;
   }
   bool HasVar(std::string name) const { return (GetVarID(name) != NO_ID); }
-  size_t AddVar(std::string name, size_t line_num) { 
+  size_t AddVar(std::string name) { 
     auto &curr_scope = scope.back();
-    //if (curr_scope.count(name)) {
-    //  std::cerr << "ERROR (line " << line_num << "): Redeclaring variable '" << name << "'." << std::endl;
-    //}
+    if (curr_scope.count(name)) {
+      std::cerr << "ERROR"<< ": Redeclaring variable '" << name << "'." << std::endl;
+    }
     size_t var_id = var_info.size();
-    var_info.emplace_back(VarData {name, line_num});
+    var_info.emplace_back(VarData {name});
     curr_scope[name] = var_id;
     return var_id;
   }
