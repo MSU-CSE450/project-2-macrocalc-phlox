@@ -101,6 +101,11 @@ class MacroCalc {
         ParseIf();
         break;
       }
+      
+      case Lexer::ID_VariableName: {
+        ParseNewVal();
+        break;
+      }
       // case Lexer::ID_WHILE: return ParseWhile();
       // case '{':
       //   //return ParseStatementBlock();
@@ -144,9 +149,16 @@ class MacroCalc {
     }
     else if(type.lexeme == "while")
       {
-        auto object2 = UseToken();
+        //std::cout << ParseEquiv();
         UseToken(emplex::Lexer::ID_EndCondition);
-        std::cout << "AHAHAHA";
+        std::cout << CurToken().lexeme;
+        while(ParseEquiv() == 1)
+        {
+          //UseToken();
+          //ParseStatement();
+          
+        }
+
         
         // else
         // {
@@ -211,7 +223,7 @@ class MacroCalc {
      } 
     else {
         // Handle expression output
-        double value = ParseEquiv();
+        double value = ParseAnd();
         std::cout << value << std::endl;
     }
     UseToken(emplex::Lexer::ID_EndCondition);
@@ -237,7 +249,6 @@ class MacroCalc {
           {
             Error(CurToken(), "left side must be variable");
           }
-
           UseToken(emplex::Lexer::ID_EOL);
         }
         else{
@@ -249,7 +260,70 @@ class MacroCalc {
   double ParseExpression() {
           return ParseAddition();
       }
+  double ParseAnd(){
+    double left = ParseEquiv();
+    while(CurToken().lexeme == "&&" or CurToken().lexeme == "||"){
+      auto op = CurToken().lexeme;
+      UseToken();
+      double right = ParseEquiv();
+      if(CurToken().lexeme == "&&")
+      {
+        if(left == 0)
+        {
+          return 0;
+        }
+        else if(left != right)
+        {
+          return 0;
+        }
+        else if(right == 0)
+        {
+          return 0;
+        }
+        else if(left == 1 and right == 1)
+        {
+          return 1;
+        }
+      }
+      else if(CurToken().lexeme == "||")
+      {
+        if(left == 1)
+        {
+          return 1;
+        }
+        else if(right == 1)
+        {
+          return 1;
+        }
+        else if(left == 1 and right == 1)
+        {
+          return 1;
+        }
+        else if(left == 0 and right == 1)
+        {
+          return 1;
+        }
+        else
+        {
+          return 0;
+        }
+      }
+    }
+    return left;
+  }
   double ParseEquiv() {
+    if(CurToken().lexeme == "!")
+    {
+      double right = ParseAnd();
+      if(right != 0)
+      {
+        return 0;
+      }
+      else
+      {
+        return 1;
+      }
+    }
     double left = ParseAddition();
     while (CurToken().lexeme == "==" or CurToken().lexeme == "!=" or CurToken().lexeme == ">" or CurToken().lexeme == "<" or CurToken().lexeme == ">=" or CurToken().lexeme == "<=") {
           auto op = CurToken().lexeme;
@@ -320,7 +394,28 @@ class MacroCalc {
       }
       return left;
   }
-
+  void ParseNewVal()
+  {
+    std::string varName = CurToken().lexeme;
+    UseToken(emplex::Lexer::ID_VariableName);  
+    if(symbols.HasVar(varName))
+    {
+      if(CurToken().id == emplex::Lexer::ID_Equal) {
+          UseToken(emplex::Lexer::ID_Equal);  
+          double value = ParseExpression(); 
+          symbols.SetValue(varName, value); 
+          
+      }
+      else
+      {
+        Error(CurToken(), "left side must be variable");
+      }
+      UseToken(emplex::Lexer::ID_EOL);
+    }
+    else{
+      Error(CurToken(), "Redeclaring Variable");
+    }
+  }
     // Parse additive expressions (e.g., addition and subtraction)
   double ParseAddition() {
       double left = ParseMult();
@@ -343,21 +438,30 @@ class MacroCalc {
   double ParseMult() {
       double left = ParsePrim();
 
-      while (CurToken().lexeme == "*" or CurToken().lexeme == "/" or CurToken().lexeme == "**") {
+      while (CurToken().lexeme == "*" or CurToken().lexeme == "/" or CurToken().lexeme == "**" or CurToken().lexeme == "%") {
           auto op = CurToken().lexeme;
           UseToken(CurToken().id);  // Consume '*', '/', or '**'
           double right = ParsePrim();
 
           if (op == "*") {
               left *= right;
-          } else if (op == "/") {
+          } 
+          else if (op == "/") {
               if (right == 0) {
                   Error(CurToken(),"Divide by zero");
               }
               left /= right;
-          } else if (op == "**") {
+          } 
+          else if (op == "**") {
               left = pow(left, right);
           }
+          else if (op == "%") {
+              if (right == 0) {
+                  Error(CurToken(),"Divide by zero");
+              }
+              return fmod(left, right);
+
+          } 
       }
 
       return left;
@@ -369,7 +473,8 @@ class MacroCalc {
         double value = std::stod(CurToken().lexeme);  // Convert token to double
         UseToken(emplex::Lexer::ID_Value);  // Consume the numeric value token
         return value;
-    } else if (CurToken().id == emplex::Lexer::ID_VariableName) {
+      } 
+    else if (CurToken().id == emplex::Lexer::ID_VariableName) {
         std::string varName = CurToken().lexeme;
         UseToken(emplex::Lexer::ID_VariableName);
 
@@ -377,7 +482,8 @@ class MacroCalc {
             Error(token_id, "Undefined variable: ", varName);
         }
         return symbols.GetValue(varName);  // Return the value of the variable
-    } else if (CurToken().id == emplex::Lexer::ID_StartCondition) {
+    } 
+    else if (CurToken().id == emplex::Lexer::ID_StartCondition) {
         UseToken(emplex::Lexer::ID_StartCondition);
         double expr = ParseExpression();  // Parse expression inside parentheses
         UseToken(emplex::Lexer::ID_EndCondition);  // Expect closing parenthesis
