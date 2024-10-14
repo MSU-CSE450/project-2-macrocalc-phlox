@@ -5,6 +5,20 @@
 #include <unordered_map>
 #include <vector>
 
+/*
+Needs two things: Name lookup and VarInfo
+VarInfo:
+  Keep a vector of variables - Vector<VarInfo> var_info
+  Similar to how things were written in his SymbolTable
+  Value of a variable is just a double
+NameLookup:
+  Use name to find variable value
+
+Changing Scope:
+  When you hit an open brace, increment scope
+  When you hit a close brace, decrement scope
+*/
+
 class SymbolTable {
 private:
   struct VarData{
