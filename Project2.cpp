@@ -77,7 +77,7 @@ class MacroCalc {
 
     Parse();
   }
-
+  bool cond = true;
   void Parse() {
     for(auto token : tokens)
     {
@@ -134,10 +134,18 @@ class MacroCalc {
           UseToken(emplex::Lexer::ID_EndCondition);
           ParseStatement();
         }
+        else
+        {
+          while(CurToken().lexeme != ";")
+          {
+            UseToken();
+          }
+          UseToken(emplex::Lexer::ID_EOL);
+        }
       }
       
     }
-    std::cout << CurToken().lexeme;
+    
   }
   void ParsePrint() {
     UseToken(emplex::Lexer::ID_Print);
