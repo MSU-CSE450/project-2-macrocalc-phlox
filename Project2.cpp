@@ -98,7 +98,11 @@ class MacroCalc {
         ParseDeclare();
         break;
       }
-      // case Lexer::ID_IF: return ParseIf();
+      case Lexer::ID_Statement: {
+        ParseIf();
+        break;
+      }
+      
       // case Lexer::ID_WHILE: return ParseWhile();
       // case '{':
       //   //return ParseStatementBlock();
@@ -111,13 +115,42 @@ class MacroCalc {
       // }
     }
   }
+  void ParseIf()
+  {
+    auto type = UseToken(emplex::Lexer::ID_Statement);
+    UseToken(emplex::Lexer::ID_StartCondition);
+    bool truth = false;
+    if(type.lexeme == "if")
+    {
+      auto object = ParseExpression();
 
+      auto comp = UseToken(emplex::Lexer::ID_Equivalent);
+      if(comp.lexeme == "==")
+      {
+        auto object2 = UseToken();
+
+        if(object == std::stod(object2.lexeme))
+        {
+          UseToken(emplex::Lexer::ID_EndCondition);
+          ParseStatement();
+        }
+      }
+      
+    }
+    std::cout << CurToken().lexeme;
+  }
   void ParsePrint() {
     UseToken(emplex::Lexer::ID_Print);
-        
+    UseToken(emplex::Lexer::ID_StartCondition);
+    
     if (CurToken().id == emplex::Lexer::ID_LitString) {
         // Handle string output with variable replacement
-        std::string output = CurToken().lexeme;
+        std::string output = "";
+        for(auto ch : CurToken().lexeme){
+          if(ch != '"'){
+            output += ch;
+          }
+        }
         UseToken(emplex::Lexer::ID_LitString);
         std::cout << output << std::endl;
      } 
@@ -126,26 +159,26 @@ class MacroCalc {
         double value = ParseExpression();
         std::cout << value << std::endl;
     }
-
-    UseToken(emplex::Lexer::ID_EOL);  // Expect a semicolon
+    UseToken(emplex::Lexer::ID_EndCondition);
+    UseToken(emplex::Lexer::ID_EOL);  
 
   }
 
   void ParseDeclare() {
-        UseToken(emplex::Lexer::ID_Var);  // Consume 'var'
+        UseToken(emplex::Lexer::ID_Var);  
         std::string varName = CurToken().lexeme;
-        UseToken(emplex::Lexer::ID_VariableName);  // Consume identifier
+        UseToken(emplex::Lexer::ID_VariableName);  
         
-        // Register the variable with the symbol table
+       
         symbols.AddVar(varName);
 
         if(CurToken().id == emplex::Lexer::ID_Equal) {
-            UseToken(emplex::Lexer::ID_Equal);  // Consume '='
-            double value = ParseExpression();  // Parse the expression
-            symbols.SetValue(varName, value);  // Assign the value to the variable
+            UseToken(emplex::Lexer::ID_Equal);  
+            double value = ParseExpression(); 
+            symbols.SetValue(varName, value); 
         }
 
-        UseToken(emplex::Lexer::ID_EOL);  // Consume ';'
+        UseToken(emplex::Lexer::ID_EOL); 
     }
 
   double ParseExpression() {
