@@ -24,7 +24,7 @@ class MacroCalc {
  private:
   size_t token_id = 0;
   std::vector<emplex::Token> tokens{};
-  ASTNode root{ASTNode::STATEMENT_BLOCK};
+  //ASTNode root{ASTNode::STATEMENT_BLOCK};
 
   SymbolTable symbols{};
 
@@ -61,13 +61,13 @@ class MacroCalc {
     return false;
   }
 
-  ASTNode MakeVarNode(const emplex::Token& token) {
-    size_t var_id = symbols.GetVarID(token.lexeme);
-    assert(var_id < symbols.GetNumVars());
-    ASTNode out(ASTNode::VAR);
-    out.SetVal(var_id);
-    return out;
-  }
+  // ASTNode MakeVarNode(const emplex::Token& token) {
+  //   size_t var_id = symbols.GetVarID(token.lexeme);
+  //   assert(var_id < symbols.GetNumVars());
+  //   ASTNode out(ASTNode::VAR);
+  //   out.SetVal(var_id);
+  //   return out;
+  // }
 
  public:
   MacroCalc(std::string filename) {  // Looked at WordLang.cpp for this

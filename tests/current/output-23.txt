@@ -1,5 +1,1 @@
-<<<<<<< HEAD
 value = 192.5
-=======
-value = {value}
->>>>>>> origin
