@@ -101,17 +101,16 @@ class MacroCalc {
         ParseIf();
         break;
       }
-      
       // case Lexer::ID_WHILE: return ParseWhile();
       // case '{':
       //   //return ParseStatementBlock();
       // case ';':
       //   return ASTNode{};
-      // default:
-      // {
-      //   ParseExpression();
-      //   break;
-      // }
+      default:
+      {
+        ParseExpression();
+        break;
+      }
     }
   }
   bool while_enabled = false;
@@ -189,9 +188,9 @@ class MacroCalc {
               }
               last_dig = intermediate.back();
               if(last_dig == ".")
-              {
-                intermediate.pop_back();
-              }
+                {
+                  intermediate.pop_back();
+                }
               output += intermediate;
               
               currvar = "";
@@ -212,7 +211,7 @@ class MacroCalc {
      } 
     else {
         // Handle expression output
-        double value = ParseExpression();
+        double value = ParseEquiv();
         std::cout << value << std::endl;
     }
     UseToken(emplex::Lexer::ID_EndCondition);
@@ -250,6 +249,77 @@ class MacroCalc {
   double ParseExpression() {
           return ParseAddition();
       }
+  double ParseEquiv() {
+    double left = ParseAddition();
+    while (CurToken().lexeme == "==" or CurToken().lexeme == "!=" or CurToken().lexeme == ">" or CurToken().lexeme == "<" or CurToken().lexeme == ">=" or CurToken().lexeme == "<=") {
+          auto op = CurToken().lexeme;
+          UseToken(CurToken().id);
+          double right = ParseAddition();
+
+          if (op == "==") {
+              if(left == right)
+              {
+                return 1;
+              }
+              else
+              {
+                return 0;
+              }
+          } 
+          else if(op == "!="){
+              if(left != right)
+              {
+                return 1;
+              }
+              else
+              {
+                return 0;
+              }
+          }
+          else if(op == ">"){
+              if(left > right)
+              {
+                return 1;
+              }
+              else
+              {
+                return 0;
+              }
+          }
+          else if(op == ">="){
+              if(left >= right)
+              {
+                return 1;
+              }
+              else
+              {
+                return 0;
+              }
+          }
+          else if(op == "<="){
+              if(left <= right)
+              {
+                return 1;
+              }
+              else
+              {
+                return 0;
+              }
+          }
+          else if(op == "<"){
+              if(left < right)
+              {
+                return 1;
+              }
+              else
+              {
+                return 0;
+              }
+          }
+          
+      }
+      return left;
+  }
 
     // Parse additive expressions (e.g., addition and subtraction)
   double ParseAddition() {
