@@ -77,7 +77,6 @@ class MacroCalc {
 
     Parse();
   }
-  bool cond = true;
   void Parse() {
     for(auto token : tokens)
     {
@@ -115,11 +114,11 @@ class MacroCalc {
       // }
     }
   }
+  bool while_enabled = false;
   void ParseIf()
   {
     auto type = UseToken(emplex::Lexer::ID_Statement);
     UseToken(emplex::Lexer::ID_StartCondition);
-    bool truth = false;
     if(type.lexeme == "if")
     {
       auto object = ParseExpression();
@@ -143,10 +142,25 @@ class MacroCalc {
           UseToken(emplex::Lexer::ID_EOL);
         }
       }
-      
     }
+    else if(type.lexeme == "while")
+      {
+        auto object2 = UseToken();
+        UseToken(emplex::Lexer::ID_EndCondition);
+        std::cout << "AHAHAHA";
+        
+        // else
+        // {
+        //   while(CurToken().lexeme != ";")
+        //   {
+        //     UseToken();
+        //   }
+        //   UseToken(emplex::Lexer::ID_EOL);
+        // }
+      }
     
   }
+  bool isScope = false;
   void ParsePrint() {
     UseToken(emplex::Lexer::ID_Print);
     UseToken(emplex::Lexer::ID_StartCondition);
@@ -154,9 +168,43 @@ class MacroCalc {
     if (CurToken().id == emplex::Lexer::ID_LitString) {
         // Handle string output with variable replacement
         std::string output = "";
+        std::string currvar = "";
         for(auto ch : CurToken().lexeme){
           if(ch != '"'){
-            output += ch;
+            if(ch == '{')
+            {
+              isScope = true;
+            }
+            else if(ch == '}')
+            {
+              int i = std::to_string(symbols.GetValue(currvar)).size();
+              std::string intermediate = std::to_string(symbols.GetValue(currvar));
+              std::string last_dig = "";
+              while(intermediate.back() == '0')
+              {
+                if(intermediate.back() == '0')
+                {
+                  intermediate.pop_back();
+                }
+              }
+              last_dig = intermediate.back();
+              if(last_dig == ".")
+              {
+                intermediate.pop_back();
+              }
+              output += intermediate;
+              
+              currvar = "";
+              isScope = false;
+            }
+            else if(isScope == false)
+            {
+              output += ch;
+            }
+            else
+            {
+              currvar += ch;
+            }
           }
         }
         UseToken(emplex::Lexer::ID_LitString);
@@ -176,17 +224,27 @@ class MacroCalc {
         UseToken(emplex::Lexer::ID_Var);  
         std::string varName = CurToken().lexeme;
         UseToken(emplex::Lexer::ID_VariableName);  
-        
-       
-        symbols.AddVar(varName);
+        if(!symbols.HasVar(varName))
+        {
+          symbols.AddVar(varName);
 
-        if(CurToken().id == emplex::Lexer::ID_Equal) {
-            UseToken(emplex::Lexer::ID_Equal);  
-            double value = ParseExpression(); 
-            symbols.SetValue(varName, value); 
+          if(CurToken().id == emplex::Lexer::ID_Equal) {
+              UseToken(emplex::Lexer::ID_Equal);  
+              double value = ParseExpression(); 
+              symbols.SetValue(varName, value); 
+              
+          }
+          else
+          {
+            Error(CurToken(), "left side must be variable");
+          }
+
+          UseToken(emplex::Lexer::ID_EOL);
         }
-
-        UseToken(emplex::Lexer::ID_EOL); 
+        else{
+          Error(CurToken(), "Redeclaring Variable");
+        }
+         
     }
 
   double ParseExpression() {
@@ -224,7 +282,7 @@ class MacroCalc {
               left *= right;
           } else if (op == "/") {
               if (right == 0) {
-                  std::cerr;
+                  Error(CurToken(),"Divide by zero");
               }
               left /= right;
           } else if (op == "**") {

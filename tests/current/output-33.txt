@@ -1,2 +1,2 @@
-c_square = {c_square}
-side a = {a}, side b = {b}, so side c = {c}
+c_square = 2025
+side a = 27, side b = 36, so side c = 45
