@@ -1,1 +1,1 @@
-Start value = {n}
+Start value = 27

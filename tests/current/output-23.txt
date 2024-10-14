@@ -1,1 +1,1 @@
-value = {value}
+value = 192.5
