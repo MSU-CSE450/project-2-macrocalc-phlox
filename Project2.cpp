@@ -188,6 +188,10 @@ class MacroCalc {
             }
             else if(ch == '}')
             {
+              if(!symbols.HasVar(currvar))
+              {
+                Error(CurToken(), "Variable does not exist");
+              }
               int i = std::to_string(symbols.GetValue(currvar)).size();
               std::string intermediate = std::to_string(symbols.GetValue(currvar));
               std::string last_dig = "";
@@ -314,7 +318,7 @@ class MacroCalc {
   double ParseEquiv() {
     if(CurToken().lexeme == "!")
     {
-      double right = ParseAnd();
+      double right = ParseAddition();
       if(right != 0)
       {
         return 0;
