@@ -106,7 +106,6 @@ class MacroCalc {
         ParseNewVal();
         break;
       }
-      // case Lexer::ID_WHILE: return ParseWhile();
       // case '{':
       //   //return ParseStatementBlock();
       // case ';':
@@ -121,18 +120,17 @@ class MacroCalc {
   bool while_enabled = false;
   void ParseIf()
   {
-    auto type = UseToken(emplex::Lexer::ID_Statement);
-    UseToken(emplex::Lexer::ID_StartCondition);
-    if(type.lexeme == "if")
+    auto type = UseToken(emplex::Lexer::ID_Statement);      //hold if, else, or while
+    UseToken(emplex::Lexer::ID_StartCondition);             //consume (
+    if(type.lexeme == "if")                                 //if "if"
     {
-      auto object = ParseExpression();
-
-      auto comp = UseToken(emplex::Lexer::ID_Equivalent);
-      if(comp.lexeme == "==")
+      auto object = ParseExpression();                      //
+      auto comp = UseToken(emplex::Lexer::ID_Equivalent);   // COMP = (==)|(>)|(<)|(>=)|(<=)|(!=)|(\!)
+      if(comp.lexeme == "==")                               // if comp is  ==
       {
-        auto object2 = UseToken();
+        auto object2 = UseToken();                          //object2 is whatever is after ==
 
-        if(object == std::stod(object2.lexeme))
+        if(object == std::stod(object2.lexeme))             //
         {
           UseToken(emplex::Lexer::ID_EndCondition);
           ParseStatement();
@@ -149,28 +147,36 @@ class MacroCalc {
     }
     else if(type.lexeme == "while")
       {
-        //std::cout << ParseEquiv();
-        UseToken(emplex::Lexer::ID_EndCondition);
-        std::cout << CurToken().lexeme;
-        while(ParseEquiv() == 1)
-        {
-          //UseToken();
-          //ParseStatement();
-          
+        auto obj = ParseExpression();                      //
+        auto comp = UseToken(emplex::Lexer::ID_Equivalent);   // COMP = (==)|(>)|(<)|(>=)|(<=)|(!=)|(\!)
+        auto obj2 = UseToken();
+        UseToken(emplex::Lexer::ID_EndCondition);           //Conmsume )
+        while(EvaluateCondition(obj, comp, obj2)){
+          ParseStatement();
         }
-
-        
-        // else
-        // {
-        //   while(CurToken().lexeme != ";")
-        //   {
-        //     UseToken();
-        //   }
-        //   UseToken(emplex::Lexer::ID_EOL);
-        // }
       }
-    
   }
+
+  bool EvaluateCondition(double left, const emplex::Token& comp, double right) {
+    if (comp.lexeme == "==") return left == right;
+    if (comp.lexeme == "!=") return left != right;
+    if (comp.lexeme == ">") return left > right;
+    if (comp.lexeme == "<") return left < right;
+    if (comp.lexeme == ">=") return left >= right;
+    if (comp.lexeme == "<=") return left <= right;
+    return false;  // Default to false if an unknown operator is used
+}
+
+  //CHECK IF WORKS
+  void ParseStatementBlock() {
+    UseToken(emplex::Lexer::ID_StartScope); //Consume {
+    while(CurToken()!=emplex::Lexer::ID_Endscope){//while still in scope
+      ParseStatement();
+      UseToken();
+    }
+    UseToken(emplex::Lexer::ID_Endscope); //Consume }
+  }
+     
   bool isScope = false;
   void ParsePrint() {
     UseToken(emplex::Lexer::ID_Print);
