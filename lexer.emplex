@@ -1,0 +1,17 @@
+Statement (while)|(if)|(else)
+StartScope {
+Endscope }
+Print print
+Var var
+-WhiteSpace \s*
+VariableName \l+\w*
+Equal =
+Value \-?\d+\.?\d+?
+EOL ;
+StartCondition \(
+LitString \".*\"
+EndCondition \)
+Equivalent (==)|(>)|(<)|(>=)|(<=)|(!=)|(\!)
+Equation (\+|\-|\/|\*|(\*\*)|%)
+-Comment \/\/.*
+AndOr (&&)|(\|\|)

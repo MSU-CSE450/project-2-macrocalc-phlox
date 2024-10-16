@@ -26,12 +26,13 @@ private:
   };
 
   Type type{EMPTY};
-  size_t val{0};
+  double val{0.0};
+  std::string literal = "";
   std::vector<ASTNode> children{};
 
 public:
   // CONSTRUCTORS, ETC HERE.
-  ASTNode(int t) : type(static_cast<Type>(t)) { ; }
+  ASTNode(Type t) : type(t) { ; }
 
   ASTNode(Type type, ASTNode child) : type(type) { AddChild(child); }
 
