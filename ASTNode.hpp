@@ -26,6 +26,8 @@ public:
     PRINT,
     WHILE,
     VAL,
+    PROGRAM,
+    
     
   };
 
@@ -34,6 +36,7 @@ private:
 
   Type type{EMPTY};
   double val{0};
+  std::string literal = "";
   std::vector<ASTNode> children{};
 
 public:
@@ -84,5 +87,8 @@ public:
   
   // CODE TO EXECUTE THIS NODE (AND ITS CHILDREN, AS NEEDED).
   double Run(SymbolTable & symbols) { ; }
+
+  void SetLiteral(const std::string &s) { literal = s;}
+  std::string GetLiteral () const {return literal; }
 
 };

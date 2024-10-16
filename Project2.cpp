@@ -25,7 +25,7 @@ class MacroCalc {
  private:
   size_t token_id = 0;
   std::vector<emplex::Token> tokens{};
-  ASTNode root{ASTNode::STATEMENT_BLOCK};
+  ASTNode root{ASTNode::PROGRAM};
 
   SymbolTable symbols{};
 
@@ -40,9 +40,7 @@ class MacroCalc {
 
   emplex::Token CurToken() const { return tokens[token_id]; }
 
-  emplex::Token UseToken() { 
-    return tokens[token_id++]; 
-  }
+  emplex::Token UseToken() { return tokens[token_id++]; }
 
   emplex::Token UseToken(int required_id, std::string err_message = "") {
     if (CurToken() != required_id) {
@@ -90,17 +88,24 @@ class MacroCalc {
   ASTNode ParseStatement() {
     switch (CurToken()) {
       using namespace emplex;
-      case Lexer::ID_Print:
+      case Lexer::ID_Print: {
         return ParsePrint();
         break;
-      case Lexer::ID_Var:
+      }
+      case Lexer::ID_Var: {
         return ParseDeclare();
+        break;
       // case Lexer::ID_I
       // case
-      case '{':
+      }
+      case '{': {
         return ParseStatementBlock();
         break;
-      case ';': return ASTNode{};
+      }
+      case ';': {
+        return ASTNode{};
+
+      }
 
       default:
         return ParseExpression();
@@ -121,11 +126,9 @@ class MacroCalc {
     return while_node;
   }
   ASTNode ParsePrint() {
-
     ASTNode print_node(ASTNode::Type::PRINT);
     UseToken(emplex::Lexer::ID_Print);
     UseToken(emplex::Lexer::ID_StartCondition);
-
 
     do {
       print_node.AddChild(ParseExpression());
@@ -133,7 +136,7 @@ class MacroCalc {
 
     UseToken(emplex::Lexer::ID_EndCondition);
     UseToken(emplex::Lexer::ID_EOL);
-    //std::cout << "Reaching return of ParsePrint" << std::endl;
+    // std::cout << "Reaching return of ParsePrint" << std::endl;
     return print_node;
   }
 
@@ -150,53 +153,42 @@ class MacroCalc {
     auto rhs_node = ParseExpression();
     UseToken(';');
 
-
     return ASTNode(ASTNode::ASSIGN, lhs_node, rhs_node);
   }
 
   ASTNode ParseExpression() {
-
-    //std::cout << "ParseExpression" << std::endl;
+    // std::cout << "ParseExpression" << std::endl;
 
     auto lhs = ParseTerm();
-
 
     std::pair<ASTNode, ASTNode::Type> result = ParseOperationAndRhs();
 
     return ASTNode(result.second, lhs, result.first);
-
-   }
+  }
 
   std::pair<ASTNode, ASTNode::Type> ParseOperationAndRhs() {
-
-
     auto op = ParseOperation();
 
-    if(op == ASTNode::EMPTY) {
+    if (op == ASTNode::EMPTY) {
       return std::make_pair(ASTNode{}, ASTNode::EMPTY);
     }
 
     auto rhs = ParseTerm();
 
-    if(rhs.NodeType() == ASTNode::EMPTY) {
+    if (rhs.NodeType() == ASTNode::EMPTY) {
       return std::make_pair(ASTNode{}, ASTNode::EMPTY);
     }
-
 
     return std::make_pair(rhs, op);
   }
 
-  ASTNode::Type ParseOperation() {
-
-    return ASTNode::Type::EMPTY;
-
-  }
+  ASTNode::Type ParseOperation() { return ASTNode::Type::EMPTY; }
 
   ASTNode ParseTerm() {
-    //std::cout << "In ParseTerm" << std::endl;
+    // std::cout << "In ParseTerm" << std::endl;
     auto token = CurToken();
 
-    switch(token) {
+    switch (token) {
       using namespace emplex;
 
       case Lexer::ID_VariableName:
@@ -212,32 +204,33 @@ class MacroCalc {
         double val = std::stod(UseToken().lexeme);
         out_node.SetVal(val);
         return out_node;
-
       }
 
-      case Lexer::ID_EndCondition : {
+      case Lexer::ID_LitString: {
+        ASTNode string_node = ASTNode(ASTNode::Type::LITERAL);
+        string_node.SetLiteral(token.lexeme);
+        return string_node;
+      }
+
+      case Lexer::ID_EndCondition: {
         return ASTNode(ASTNode::Type::EMPTY);
         break;
-
       }
-      case Lexer::ID_EOL : {
+      case Lexer::ID_EOL: {
         return ASTNode(ASTNode::Type::EMPTY);
         break;
       }
       default:
         Error(token, "Expected expression. Found ", TokenName(token), ".");
-
     }
 
     return ASTNode{};
-
   }
 
-  void PrintNode(ASTNode &node) {
-
+  void PrintNode(ASTNode& node) {
     std::cout << "Node type:" << node.NodeType() << std::endl;
 
-    switch(node.NodeType()) {
+    switch (node.NodeType()) {
       case ASTNode::VAL:
         std::cout << "Printing Val in function: " << std::endl;
         break;
@@ -249,43 +242,65 @@ class MacroCalc {
     }
   }
 
-  void Run(ASTNode& node) {
+  double Run(ASTNode& node) {
     switch (node.NodeType()) {
-      case ASTNode::EMPTY:
+      
+      case ASTNode::EMPTY: {
         assert(false);
+        break;
+
+      
+        
+      }
       case ASTNode::STATEMENT_BLOCK: {
         for (ASTNode& child : node.GetChildren()) {
-          Run(child);
+          std::cout << Run(child);
         }
-
+        return 999;
         break;
       }
+      
       case ASTNode::ASSIGN: {
         assert(node.GetChildren().size() == 2);
         assert(node.GetChild(0).NodeType() == ASTNode::VAR);
         auto var_id = node.GetChild(0).GetVal();
         symbols.SetValue(std::to_string(var_id), node.GetChild(1).GetVal());
+        return node.GetChild(1).GetVal();
         break;
       }
 
       case ASTNode::PRINT: {
+          std::cout << "PRINTTTTTt";
         for (ASTNode& child : node.GetChildren()) {
-          Run(child);
-          PrintNode(child);
-          
+          std::cout << "AAAAAA";
+          double val = Run(child);
+          if (child.NodeType() == ASTNode::Type::LITERAL) {
+            std::cout <<" INSIDE LITERAL PRINT";
+            std::cout << child.GetLiteral();
+
+          } else if (child.NodeType() == ASTNode::Type::VAL) {
+            std::cout <<" INSIDE VAL PRINT";
+            std::cout << val; 
+          }
         }
+
 
         break;
 
       }
 
       case ASTNode::VAL: {
-        assert(node.GetChildren().size() == 0);
-        std::cout << "Value in VAL switch case: " << node.GetVal() << std::endl;
-        break;
+        return node.GetVal();
+      }
+
+      case ASTNode::PROGRAM: {
+        for(auto &x : node.GetChildren()) {
+          Run(x);
+        }
       }
 
       default:
+        return 666;
         break;
     }
   }
@@ -314,7 +329,6 @@ int main(int argc, char* argv[]) {
 
   MacroCalc calc(filename);
 
-
-  //std::cout << "REACHING RUN" << std::endl;
+  // std::cout << "REACHING RUN" << std::endl;
   calc.Run();
 }
