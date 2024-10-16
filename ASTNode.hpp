@@ -8,23 +8,14 @@
 #include "SymbolTable.hpp"
 
 class ASTNode {
-private:
+public:
   // PLACE AST NODE INFO HERE.
   enum Type {
     EMPTY=0,
-    START_COND,
-    END_COND,
-    EXP,
-    MULT,
-    DIV,
-    MOD,
-    ADD,
-    SUB,
-    ASSIGN,
     VAR,
-    LITERAL
   };
 
+private:
   Type type{EMPTY};
   double val{0.0};
   std::string literal = "";
