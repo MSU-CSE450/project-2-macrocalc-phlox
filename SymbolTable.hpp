@@ -56,7 +56,9 @@ public:
 
     return NO_ID;
   }
-  bool HasVar(std::string name) const { return (GetVarID(name) != NO_ID); }
+  bool HasVar(std::string name) const { 
+    return (GetVarID(name) != NO_ID); 
+    }
   size_t AddVar(std::string name) { 
     auto &curr_scope = scope.back();
     if (curr_scope.count(name)) {
@@ -69,13 +71,60 @@ public:
   }
   double GetValue(std::string name) const {
     assert(HasVar(name));
+    double val;
+    for(auto it : scope)
+    {
+      for(auto i : it)
+      {
+        auto a = i.first;
+        if(i.first == name)
+        {
+          val = i.second;
+        }
+      }
+    }
     auto mp = scope.back();
-    return mp[name];
+    return val;
   }
   void SetValue(std::string name, double value) { 
     std::unordered_map<std::string, double> curr_map = PopScope();
     curr_map[name] = value;
     PushScope(curr_map);
+    // std::vector<std::unordered_map<std::string, double>> newScope;
+    // while(scope.size() > 0)
+    // {
+    //   newScope.insert(newScope.begin(), PopScope());
+    // }
+    // for(auto vec : newScope)
+    // {
+    //   for(auto i : vec)
+    //   {
+    //     if(i.first == name)
+    //     {
+    //       i.second = value;
+    //       //std::cout << i.first << " " << i.second;
+    //     }
+    //   }
+    // }
+    // for(auto vec : newScope)
+    // {
+    //   std::unordered_map<std::string, double> temp;
+    //   for(auto i : vec)
+    //   {
+    //     std::cout << i.first << " " << i.second;
+    //   }
+    // }
+  }
+  bool IsInMostRecentStack(std::string name)
+  {
+    for(auto it : scope.back())
+    {
+      if(it.first == name)
+      {
+        return true;
+      }
+    }
+    return false;
   }
 };
 

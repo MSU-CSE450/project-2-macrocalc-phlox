@@ -1,7 +1,0 @@
-var x;
-x = 2;
-var y = x * 10 + 3;
-{
-    var x = 20;   // The new 'x' shadows the old one while in this scope.
-    y = y + x;    // The old 'y' is used since it isn't being shadowed.
-}

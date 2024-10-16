@@ -77,6 +77,7 @@ class MacroCalc {
 
     Parse();
   }
+  bool scope_pushed = false;
   void Parse() {
     for(auto token : tokens)
     {
@@ -107,8 +108,16 @@ class MacroCalc {
         break;
       }
       // case Lexer::ID_WHILE: return ParseWhile();
-      // case '{':
-      //   //return ParseStatementBlock();
+      case Lexer::ID_StartScope:
+      {
+        ParseStatementBlock();
+        break;
+      }
+      case Lexer::ID_Endscope:
+      {
+        break;
+      }
+
       // case ';':
       //   return ASTNode{};
       default:
@@ -116,6 +125,21 @@ class MacroCalc {
         ParseExpression();
         break;
       }
+    }
+  }
+  void ParseStatementBlock()
+  {
+    UseToken(emplex::Lexer::ID_StartScope);
+    std::unordered_map<std::string, double> mp;
+    symbols.PushScope(mp);
+    while(CurToken() != emplex::Lexer::ID__EOF_ and CurToken() != emplex::Lexer::ID_Endscope)
+    {
+      ParseStatement();
+    }
+    if(CurToken() == emplex::Lexer::ID__EOF_ or CurToken() == emplex::Lexer::ID_Endscope)
+    {
+      symbols.PopScope();
+      UseToken(emplex::Lexer::ID_Endscope);
     }
   }
   bool while_enabled = false;
@@ -227,6 +251,7 @@ class MacroCalc {
      } 
     else {
         // Handle expression output
+
         double value = ParseAnd();
         std::cout << value << std::endl;
     }
@@ -239,7 +264,7 @@ class MacroCalc {
         UseToken(emplex::Lexer::ID_Var);  
         std::string varName = CurToken().lexeme;
         UseToken(emplex::Lexer::ID_VariableName);  
-        if(!symbols.HasVar(varName))
+        if(!symbols.IsInMostRecentStack(varName))
         {
           symbols.AddVar(varName);
 
