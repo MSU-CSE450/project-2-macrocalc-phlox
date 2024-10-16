@@ -1,1 +1,2 @@
-11
+Value in VAL switch case: 11
+Node type:0

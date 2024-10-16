@@ -25,6 +25,7 @@ public:
     STATEMENT_BLOCK,
     PRINT,
     WHILE,
+    VAL,
     
   };
 
@@ -32,12 +33,12 @@ private:
   // PLACE AST NODE INFO HERE.
 
   Type type{EMPTY};
-  size_t val{0};
+  double val{0};
   std::vector<ASTNode> children{};
 
 public:
   // CONSTRUCTORS, ETC HERE.
-  ASTNode(int t) : type(static_cast<Type>(t)) { ; }
+  ASTNode(ASTNode::Type t) : type(t){};
 
   ASTNode(Type type, ASTNode child) : type(type) { AddChild(child); }
 
@@ -74,13 +75,12 @@ public:
     children.push_back(node);
   }
 
-  size_t & GetVal() { return val; }
 
-  const size_t & GetVal() const { return val; }
-
-  void SetVal(size_t num){
+  void SetVal(double num){
     val = num;
   }
+
+  double GetVal() {return val;}
   
   // CODE TO EXECUTE THIS NODE (AND ITS CHILDREN, AS NEEDED).
   double Run(SymbolTable & symbols) { ; }

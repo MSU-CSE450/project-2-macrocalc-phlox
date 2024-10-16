@@ -1,2 +1,0 @@
-c_square = 2025
-side a = 27, side b = 36, so side c = 45
