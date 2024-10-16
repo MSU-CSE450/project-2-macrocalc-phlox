@@ -25,7 +25,7 @@ class MacroCalc {
  private:
   size_t token_id = 0;
   std::vector<emplex::Token> tokens{};
-  ASTNode root{ASTNode::EMPTY};
+  ASTNode root{ASTNode::STATEMENT_BLOCK};
 
   SymbolTable symbols{};
 
@@ -40,9 +40,7 @@ class MacroCalc {
 
   emplex::Token CurToken() const { return tokens[token_id]; }
 
-  emplex::Token UseToken() { 
-    return tokens[token_id++]; 
-  }
+  emplex::Token UseToken() { return tokens[token_id++]; }
 
   emplex::Token UseToken(int required_id, std::string err_message = "") {
     if (CurToken() != required_id) {
@@ -88,6 +86,16 @@ class MacroCalc {
   }
 
   ASTNode ParseStatement() {
+    switch (CurToken()) {
+      using namespace emplex;
+      case Lexer::ID_Print:
+        return ParsePrint();
+      case Lexer::ID_EOL:
+        return ASTNode{};
+
+      default:
+        return ParseExpression();
+    }
   }
   /*
   ASTNode ParseStatementBlock() {
@@ -96,29 +104,82 @@ class MacroCalc {
 
   ASTNode ParseIf() {}
 
-  ASTNode ParseWhile() {
-
-  }
+  ASTNode ParseWhile() {}
   ASTNode ParsePrint() {
+    ASTNode print_node(ASTNode::Type::PRINT);
 
+    UseToken(emplex::Lexer::ID_Print);
+    UseToken(emplex::Lexer::ID_StartCondition);
+        
+    print_node.AddChild(ParseExpression());
+  
+    UseToken(emplex::Lexer::ID_EndCondition);
+    UseToken(emplex::Lexer::ID_EOL);
+
+
+    return print_node;
   }
 
-  ASTNode ParseDeclare() {
-  }
+  ASTNode ParseDeclare() {}
 
   ASTNode ParseExpression() {
+    ASTNode term_node = ParseTerm();
 
-
-   }
-
-
-  ASTNode ParseTerm() {
-
-
+    return term_node;
   }
 
+  ASTNode ParseTerm() {
+    auto token = UseToken();
+
+    switch (token) {
+      using namespace emplex;
+
+      case Lexer::ID_Value: {
+        ASTNode out_node = ASTNode(ASTNode::Type::VAL);
+        double val = std::stod(token.lexeme);
+
+        out_node.SetVal(val);
+        return out_node;
+
+        break;
+      }
+      
+      default:
+        Error(token, "Expected expression. Found ", TokenName(token), ".");
+    }
+
+    return ASTNode{};
+  }
 
   double Run(ASTNode& node) {
+    switch (node.NodeType()) {
+
+
+      case ASTNode::EMPTY: {
+        assert(false);
+        break;
+      }
+
+      case ASTNode::STATEMENT_BLOCK : {
+        for(auto &child : node.GetChildren()){
+          Run(child);
+        }
+        return 0.0;
+      }
+      case ASTNode::PRINT: {
+        for (ASTNode& child : node.GetChildren()) {
+          double result = Run(child);
+          std::cout << result;
+        }
+
+        break;
+      }
+
+      case ASTNode::VAL : {
+        return node.GetVal();
+      }
+    }
+
     return 0.0;
   }
 
@@ -145,7 +206,6 @@ int main(int argc, char* argv[]) {
   // EXECUTE the AST to run your program.
 
   MacroCalc calc(filename);
-
 
   calc.Run();
 }
