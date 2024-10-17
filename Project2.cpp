@@ -10,10 +10,75 @@
 // Below are some suggestions on how you might want to divide up your project.
 // You may delete this and divide it up however you like.
 #include "ASTNode.hpp"
-#include "SymbolTable.hpp"
 #include "lexer.hpp"
 
 bool PRINT_DEBUG = false;
+
+template <typename... Ts>
+void Error(size_t line_num, Ts... message) {
+  std::cerr << "ERROR (line " << line_num << "): ";
+  (std::cerr << ... << message);
+  std::cerr << std::endl;
+  exit(1);
+}
+
+
+class SymbolTable {
+ private:
+  struct SymbolInfo {
+    std::string name;
+    double val;
+    size_t declare_line;
+    size_t current_id = 0;
+
+    SymbolInfo(std::string name, size_t declare_line)
+        : name(name), declare_line(declare_line) {}
+  };
+
+  std::vector<SymbolInfo> var_info;
+  using scope_t = std::unordered_map<std::string, size_t>;
+  std::vector<scope_t> scope_stack{1};
+
+ public:
+  static constexpr size_t NO_ID = static_cast<size_t>(-1);
+
+  size_t GetNumVars() const { return var_info.size(); }
+
+  size_t GetVarID(std::string name) const {
+    for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
+      if (it->count(name)) return it->find(name)->second;
+    }
+
+    return NO_ID;
+  }
+
+  bool HasVar(std::string name) const { return (GetVarID(name) != NO_ID); }
+
+  size_t AddVar(size_t line_num, std::string name) {
+    if(PRINT_DEBUG) std::cout << "AddVar line_num: " << line_num << " name: " << name << std::endl;
+    auto& scope = scope_stack.back();
+    if (scope.count(name)) {
+      Error(line_num, "Redeclaration of variable '", name, "'.");
+    }
+    size_t var_id = var_info.size();
+    var_info.emplace_back(name, line_num);
+    scope[name] = var_id;
+    return var_id;
+  }
+
+  double& VarValue(size_t id) {
+    if(PRINT_DEBUG) std::cout << "VarValue id: " << id << std::endl;
+    assert(id < var_info.size());
+    return var_info[id].val;
+  }
+
+  void IncScope() { scope_stack.emplace_back(); }
+
+  void DecScope() {
+    assert(scope_stack.size() > 1);
+    scope_stack.pop_back();
+  }
+};
 
 class MacroCalc {
  private:
@@ -57,7 +122,9 @@ class MacroCalc {
   }
 
   ASTNode MakeVarNode(const emplex::Token& token) {  // Wordlang Stuff
+    
     size_t var_id = symbols.GetVarID(token.lexeme);
+    if(PRINT_DEBUG) std::cout << "MakeVarNode var_id found in symbol table: " << var_id << "of lexeme: " << token.lexeme << std::endl;
     assert(var_id < symbols.GetNumVars());
     ASTNode out(ASTNode::VAR);
     out.SetVal(var_id);
@@ -134,7 +201,7 @@ class MacroCalc {
 
     UseToken(emplex::Lexer::ID_Equal, "Expected ';' or '='.");
 
-    auto lhs_node = MakeVarNode(var_token);
+    auto lhs_node = MakeVarNode(id_token);
     auto rhs_node = ParseExpression();
 
     UseToken(emplex::Lexer::ID_EOL);
@@ -226,7 +293,7 @@ class MacroCalc {
         if(PRINT_DEBUG) std::cout << "Run: PRINT case node.GetVal(): " << node.GetVal() << std::endl;
         for (ASTNode& child : node.GetChildren()) {
           double result = Run(child);
-          std::cout << result;
+          std::cout << result << std::endl;
         }
 
         break;
@@ -248,6 +315,7 @@ class MacroCalc {
         if(PRINT_DEBUG) std::cout << "Run: ASSIGN case node.GetVal(): " << node.GetVal() << std::endl;
         assert(node.GetChildren().size() == 2);
         assert(node.GetChild(0).NodeType() == ASTNode::VAR);
+        if(PRINT_DEBUG) std::cout << "  node.GetChild(0).GetVal(); : " << node.GetChild(0).GetVal() << std::endl;
         size_t var_id = node.GetChild(0).GetVal();
         return symbols.VarValue(var_id) = Run(node.GetChild(1));
       }
@@ -314,6 +382,11 @@ int main(int argc, char* argv[]) {
   // TO DO:
   // PARSE input file to create Abstract Syntax Tree (AST).
   // EXECUTE the AST to run your program.
+
+
+  if(PRINT_DEBUG) {
+    std::cout << in_file.rdbuf();
+  }
 
   MacroCalc calc(filename);
 
