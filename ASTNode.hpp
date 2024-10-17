@@ -16,6 +16,7 @@ public:
     PRINT,
     VAL,
     STATEMENT_BLOCK,
+    ASSIGN
 
   };
 
@@ -64,13 +65,12 @@ public:
     children.push_back(node);
   }
 
-  double GetVal() const {return val;}
+  size_t GetVal() const {return val;}
 
-  void SetVal(double num){
+  void SetVal(size_t num){
     val = num;
   }
   
-  // CODE TO EXECUTE THIS NODE (AND ITS CHILDREN, AS NEEDED).
-  double Run(SymbolTable & symbols) { ; }
+
 
 };

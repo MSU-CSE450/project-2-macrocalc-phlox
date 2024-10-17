@@ -1,130 +1,68 @@
 #pragma once
 
-#include <assert.h>
-#include <string>
 #include <unordered_map>
-#include <vector>
 
-/*
-Needs two things: Name lookup and VarInfo
-VarInfo:
-  Keep a vector of variables - Vector<VarInfo> var_info
-  Similar to how things were written in his SymbolTable
-  Value of a variable is just a double
-NameLookup:
-  Use name to find variable value
 
-Changing Scope:
-  When you hit an open brace, increment scope
-  When you hit a close brace, decrement scope
-*/
+
+template <typename... Ts>
+void Error(size_t line_num, Ts... message) {
+  std::cerr << "ERROR (line " << line_num << "): ";
+  (std::cerr << ... << message);
+  std::cerr << std::endl;
+  exit(1);
+}
+
 
 class SymbolTable {
-private:
-  struct VarData{
+ private:
+  struct SymbolInfo {
     std::string name;
-    size_t line_num;
-  };
-  // CODE TO STORE SCOPES AND VARIABLES HERE.
-  
-  // HINT: YOU CAN CONVERT EACH VARIABLE NAME TO A UNIQUE ID TO CLEANLY DEAL
-  //       WITH SHADOWING AND LOOKING UP VARIABLES LATER.
-  std::vector<VarData> var_info;
-  std::vector<std::unordered_map<std::string, double>> scope{1};
+    double val;
+    size_t declare_line;
 
-public:
-  // CONSTRUCTOR, ETC HERE
-  SymbolTable(){} 
+    SymbolInfo(std::string name, size_t declare_line)
+        : name(name), declare_line(declare_line) {}
+  };
+
+  std::vector<SymbolInfo> var_info;
+  using scope_t = std::unordered_map<std::string, size_t>;
+  std::vector<scope_t> scope_stack{1};
+
+ public:
   static constexpr size_t NO_ID = static_cast<size_t>(-1);
-  // FUNCTIONS TO MANAGE SCOPES
-  void PushScope(std::unordered_map<std::string, double> mp) { scope.push_back(mp); }
-  std::unordered_map<std::string, double> PopScope()
-  { 
-    auto temp = scope.back(); 
-    scope.pop_back(); 
-    return temp;
-  }
-  // FUNCTIONS TO MANAGE VARIABLES
+
   size_t GetNumVars() const { return var_info.size(); }
+
   size_t GetVarID(std::string name) const {
-    for (auto it = scope.rbegin();
-         it != scope.rend();
-         ++it)
-    {
+    for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
       if (it->count(name)) return it->find(name)->second;
     }
 
     return NO_ID;
   }
-  bool HasVar(std::string name) const { 
-    return (GetVarID(name) != NO_ID); 
-    }
-  size_t AddVar(std::string name) { 
-    auto &curr_scope = scope.back();
-    if (curr_scope.count(name)) {
-      std::cerr << "ERROR"<< ": Redeclaring variable '" << name << "'." << std::endl;
+
+  bool HasVar(std::string name) const { return (GetVarID(name) != NO_ID); }
+
+  size_t AddVar(size_t line_num, std::string name) {
+    auto& scope = scope_stack.back();
+    if (scope.count(name)) {
+      Error(line_num, "Redeclaration of variable '", name, "'.");
     }
     size_t var_id = var_info.size();
-    var_info.emplace_back(VarData {name});
-    curr_scope[name] = var_id;
+    var_info.emplace_back(name, line_num);
+    scope[name] = var_id;
     return var_id;
   }
-  double GetValue(std::string name) const {
-    assert(HasVar(name));
-    double val;
-    for(auto it : scope)
-    {
-      for(auto i : it)
-      {
-        auto a = i.first;
-        if(i.first == name)
-        {
-          val = i.second;
-        }
-      }
-    }
-    auto mp = scope.back();
-    return val;
+
+  double& VarValue(size_t id) {
+    assert(id < var_info.size());
+    return var_info[id].val;
   }
-  void SetValue(std::string name, double value) { 
-    std::unordered_map<std::string, double> curr_map = PopScope();
-    curr_map[name] = value;
-    PushScope(curr_map);
-    // std::vector<std::unordered_map<std::string, double>> newScope;
-    // while(scope.size() > 0)
-    // {
-    //   newScope.insert(newScope.begin(), PopScope());
-    // }
-    // for(auto vec : newScope)
-    // {
-    //   for(auto i : vec)
-    //   {
-    //     if(i.first == name)
-    //     {
-    //       i.second = value;
-    //       //std::cout << i.first << " " << i.second;
-    //     }
-    //   }
-    // }
-    // for(auto vec : newScope)
-    // {
-    //   std::unordered_map<std::string, double> temp;
-    //   for(auto i : vec)
-    //   {
-    //     std::cout << i.first << " " << i.second;
-    //   }
-    // }
-  }
-  bool IsInMostRecentStack(std::string name)
-  {
-    for(auto it : scope.back())
-    {
-      if(it.first == name)
-      {
-        return true;
-      }
-    }
-    return false;
+
+  void IncScope() { scope_stack.emplace_back(); }
+
+  void DecScope() {
+    assert(scope_stack.size() > 1);
+    scope_stack.pop_back();
   }
 };
-
