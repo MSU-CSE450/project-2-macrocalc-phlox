@@ -3,10 +3,10 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <sstream>
 
 // Below are some suggestions on how you might want to divide up your project.
 // You may delete this and divide it up however you like.
@@ -22,7 +22,6 @@ void Error(size_t line_num, Ts... message) {
   std::cerr << std::endl;
   exit(1);
 }
-
 
 class SymbolTable {
  private:
@@ -56,7 +55,9 @@ class SymbolTable {
   bool HasVar(std::string name) const { return (GetVarID(name) != NO_ID); }
 
   size_t AddVar(size_t line_num, std::string name) {
-    if(PRINT_DEBUG) std::cout << "AddVar line_num: " << line_num << " name: " << name << std::endl;
+    if (PRINT_DEBUG)
+      std::cout << "AddVar line_num: " << line_num << " name: " << name
+                << std::endl;
     auto& scope = scope_stack.back();
     if (scope.count(name)) {
       Error(line_num, "Redeclaration of variable '", name, "'.");
@@ -68,7 +69,7 @@ class SymbolTable {
   }
 
   double& VarValue(size_t id) {
-    if(PRINT_DEBUG) std::cout << "VarValue id: " << id << std::endl;
+    if (PRINT_DEBUG) std::cout << "VarValue id: " << id << std::endl;
     assert(id < var_info.size());
     return var_info[id].val;
   }
@@ -123,9 +124,11 @@ class MacroCalc {
   }
 
   ASTNode MakeVarNode(const emplex::Token& token) {  // Wordlang Stuff
-    
+
     size_t var_id = symbols.GetVarID(token.lexeme);
-    if(PRINT_DEBUG) std::cout << "MakeVarNode var_id found in symbol table: " << var_id << "of lexeme: " << token.lexeme << std::endl;
+    if (PRINT_DEBUG)
+      std::cout << "MakeVarNode var_id found in symbol table: " << var_id
+                << "of lexeme: " << token.lexeme << std::endl;
     assert(var_id < symbols.GetNumVars());
     ASTNode out(ASTNode::VAR);
     out.SetVal(var_id);
@@ -148,7 +151,9 @@ class MacroCalc {
   }
 
   ASTNode ParseStatement() {
-    if(PRINT_DEBUG) std::cout << "ParseStatement called CurToken: " << CurToken().lexeme << std::endl;
+    if (PRINT_DEBUG)
+      std::cout << "ParseStatement called CurToken: " << CurToken().lexeme
+                << std::endl;
     switch (CurToken()) {
       using namespace emplex;
       case Lexer::ID_Print:
@@ -162,7 +167,6 @@ class MacroCalc {
         return ParseDeclare();
         break;
       }
-      
 
       default:
         return ParseExpression();
@@ -177,28 +181,43 @@ class MacroCalc {
 
   ASTNode ParseWhile() {}
   ASTNode ParsePrint() {
-    if(PRINT_DEBUG) std::cout << "ParsePrint called CurToken: " << CurToken().lexeme << std::endl;
+    if (PRINT_DEBUG)
+      std::cout << "ParsePrint called CurToken: " << CurToken().lexeme
+                << std::endl;
     ASTNode print_node(ASTNode::Type::PRINT);
-    
+
     UseToken(emplex::Lexer::ID_Print);
     UseToken(emplex::Lexer::ID_StartCondition);
-    
+    std::string literal = CurToken().lexeme.substr(1,CurToken().lexeme.length() - 2);
+    if(UseTokenIf(emplex::Lexer::ID_LitString)) {
+      ASTNode print_node_literal{ASTNode::Type::PRINT_LITERAL};
+      
+      print_node_literal.SetLiteral(literal);
+
+      UseToken(emplex::Lexer::ID_EndCondition);
+      UseToken(emplex::Lexer::ID_EOL);
+
+      return print_node_literal;
+    }
+
     print_node.AddChild(ParseExpression());
-    
+
     UseToken(emplex::Lexer::ID_EndCondition);
     UseToken(emplex::Lexer::ID_EOL);
-    
+
     return print_node;
   }
 
   ASTNode ParseDeclare() {
-    if(PRINT_DEBUG) std::cout << "ParseDeclare called CurToken: " << CurToken().lexeme << std::endl;
+    if (PRINT_DEBUG)
+      std::cout << "ParseDeclare called CurToken: " << CurToken().lexeme
+                << std::endl;
     auto var_token = UseToken(emplex::Lexer::ID_Var);
     auto id_token = UseToken(emplex::Lexer::ID_VariableName);
 
-    symbols.AddVar(var_token,id_token.lexeme);
-    
-    if(UseTokenIf(';')) return ASTNode{};
+    symbols.AddVar(var_token, id_token.lexeme);
+
+    if (UseTokenIf(';')) return ASTNode{};
 
     UseToken(emplex::Lexer::ID_Equal, "Expected ';' or '='.");
 
@@ -207,11 +226,12 @@ class MacroCalc {
 
     UseToken(emplex::Lexer::ID_EOL);
     return ASTNode{ASTNode::ASSIGN, lhs_node, rhs_node};
-
   }
 
   ASTNode ParseExpression() {
-    if(PRINT_DEBUG) std::cout << "ParseExpression called CurToken: " << CurToken().lexeme << std::endl;
+    if (PRINT_DEBUG)
+      std::cout << "ParseExpression called CurToken: " << CurToken().lexeme
+                << std::endl;
     using namespace emplex;
     ASTNode term_node = ParseTerm();
 
@@ -222,22 +242,30 @@ class MacroCalc {
     }
     */
 
-    if(token == emplex::Lexer::ID_Equal) {
+    if (token == emplex::Lexer::ID_Equal) {
       //
       return ParseExpressionAssign(term_node);
+    } else if (token == emplex::Lexer::ID_LitString) {
+      ASTNode out_node(ASTNode::Type::LITERAL);
+
+      out_node.SetLiteral(token.lexeme);
+      return out_node;   
     }
 
     return term_node;
   }
 
   ASTNode ParseExpressionAssign(ASTNode left) {
-    if(PRINT_DEBUG) std::cout << "ParseExpressionAssign called CurToken: " << CurToken().lexeme << "left: " << left.NodeType() << std::endl;
+    if (PRINT_DEBUG)
+      std::cout << "ParseExpressionAssign called CurToken: "
+                << CurToken().lexeme << "left: " << left.NodeType()
+                << std::endl;
     using namespace emplex;
     UseToken(Lexer::ID_Equal);
 
     auto right = ParseExpression();
 
-    if(left.NodeType() == ASTNode::VAR ) {
+    if (left.NodeType() == ASTNode::VAR) {
       return ASTNode{ASTNode::ASSIGN, left, right};
     } else {
       // Error
@@ -245,7 +273,9 @@ class MacroCalc {
   }
 
   ASTNode ParseTerm() {
-    if(PRINT_DEBUG) std::cout << "ParseTerm called CurToken: " << CurToken().lexeme << std::endl;
+    if (PRINT_DEBUG)
+      std::cout << "ParseTerm called CurToken: " << CurToken().lexeme
+                << std::endl;
     auto token = UseToken();
 
     switch (token) {
@@ -253,7 +283,9 @@ class MacroCalc {
 
       case Lexer::ID_Value: {
         ASTNode out_node = ASTNode(ASTNode::Type::VAL);
-        if(PRINT_DEBUG) std::cout << "ParseTerm case ID_VALUE token.lexeme: " << token.lexeme << std::endl; 
+        if (PRINT_DEBUG)
+          std::cout << "ParseTerm case ID_VALUE token.lexeme: " << token.lexeme
+                    << std::endl;
         double val = std::stod(token.lexeme);
 
         out_node.SetVal(val);
@@ -265,7 +297,7 @@ class MacroCalc {
       case Lexer::ID_VariableName: {
         return MakeVarNode(token);
       }
-      
+
       default:
         Error(token, "Expected expression. Found ", TokenName(token), ".");
     }
@@ -275,55 +307,73 @@ class MacroCalc {
 
   double Run(ASTNode& node) {
     switch (node.NodeType()) {
-
-
       case ASTNode::EMPTY: {
-        if(PRINT_DEBUG) std::cout << "Run: EMPTY case node.GetVal(): " << node.GetVal() << std::endl;
+        if (PRINT_DEBUG)
+          std::cout << "Run: EMPTY case node.GetVal(): " << node.GetVal()
+                    << std::endl;
         assert(false);
         break;
       }
 
-      case ASTNode::STATEMENT_BLOCK : {
-        if(PRINT_DEBUG) std::cout << "Run: STATEMENT_BLOCK case node.GetVal(): " << node.GetVal() << std::endl;
-        for(auto &child : node.GetChildren()){
-          
+      case ASTNode::STATEMENT_BLOCK: {
+        if (PRINT_DEBUG)
+          std::cout << "Run: STATEMENT_BLOCK case node.GetVal(): "
+                    << node.GetVal() << std::endl;
+        for (auto& child : node.GetChildren()) {
           Run(child);
         }
         return 0.0;
       }
       case ASTNode::PRINT: {
-        if(PRINT_DEBUG) std::cout << "Run: PRINT case node.GetVal(): " << node.GetVal() << std::endl;
+        if (PRINT_DEBUG)
+          std::cout << "Run: PRINT case node.GetVal(): " << node.GetVal()
+                    << std::endl;
         for (ASTNode& child : node.GetChildren()) {
-          double result = Run(child);
+          if (child.NodeType() == ASTNode::Type::LITERAL) {
+            std::cout << node.GetLiteral();
+          } else {
+            double result = Run(child);
 
-
-          std::cout << result << std::endl;
+            std::cout << result << std::endl;
+          }
         }
 
         break;
       }
 
-      case ASTNode::VAL : {
-        if(PRINT_DEBUG) std::cout << "Run: VAL case node.GetVal(): " << node.GetVal() << std::endl;
+      case ASTNode::VAL: {
+        if (PRINT_DEBUG)
+          std::cout << "Run: VAL case node.GetVal(): " << node.GetVal()
+                    << std::endl;
         return node.GetVal();
-        
       }
 
       case ASTNode::VAR: {
-        if(PRINT_DEBUG) std::cout << "Run: VAR case node.GetVal(): " << node.GetVal() << std::endl;
+        if (PRINT_DEBUG)
+          std::cout << "Run: VAR case node.GetVal(): " << node.GetVal()
+                    << std::endl;
 
         assert(node.GetChildren().size() == 0);
         return symbols.VarValue(node.GetVal());
       }
 
       case ASTNode::ASSIGN: {
-        if(PRINT_DEBUG) std::cout << "Run: ASSIGN case node.GetVal(): " << node.GetVal() << std::endl;
+        if (PRINT_DEBUG)
+          std::cout << "Run: ASSIGN case node.GetVal(): " << node.GetVal()
+                    << std::endl;
         assert(node.GetChildren().size() == 2);
         assert(node.GetChild(0).NodeType() == ASTNode::VAR);
-        if(PRINT_DEBUG) std::cout << "  node.GetChild(0).GetVal(); : " << node.GetChild(0).GetVal() << std::endl;
+        if (PRINT_DEBUG)
+          std::cout << "  node.GetChild(0).GetVal(); : "
+                    << node.GetChild(0).GetVal() << std::endl;
         size_t var_id = node.GetChild(0).GetVal();
         return symbols.VarValue(var_id) = Run(node.GetChild(1));
       }
+
+      case ASTNode::PRINT_LITERAL:
+        if(PRINT_DEBUG) std::cout << "Run: PRINT_LITERAL case" <<std::endl;
+        std::cout << node.GetLiteral() << std::endl;
+
     }
 
     return 0.0;
@@ -331,38 +381,35 @@ class MacroCalc {
 
   void Run() { Run(root); }
 
-  void PrintDebug(const ASTNode & node, std::string prefix="") const {
+  void PrintDebug(const ASTNode& node, std::string prefix = "") const {
     std::cout << prefix;
 
     switch (node.NodeType()) {
-    case ASTNode::EMPTY:
-      std::cout << "EMPTY" << std::endl;
-      break;
-    case ASTNode::STATEMENT_BLOCK:
-      std::cout << "STATEMENT_BLOCK" << std::endl;
-      break;
-    case ASTNode::ASSIGN:
-      std::cout << "ASSIGN" << std::endl;
-      break;
+      case ASTNode::EMPTY:
+        std::cout << "EMPTY" << std::endl;
+        break;
+      case ASTNode::STATEMENT_BLOCK:
+        std::cout << "STATEMENT_BLOCK" << std::endl;
+        break;
+      case ASTNode::ASSIGN:
+        std::cout << "ASSIGN" << std::endl;
+        break;
 
-    case ASTNode::VAR:
-      std::cout << "VARIABLE" << std::endl;
-      break;
+      case ASTNode::VAR:
+        std::cout << "VARIABLE" << std::endl;
+        break;
 
+      case ASTNode::PRINT:
+        std::cout << "PRINT" << std::endl;
+        break;
 
-    case ASTNode::PRINT:
-      std::cout << "PRINT" << std::endl;
-      break;
-
-    case ASTNode::VAL:
-      std::cout << "VAL" << std::endl;
-      break;
-
-
+      case ASTNode::VAL:
+        std::cout << "VAL" << std::endl;
+        break;
     }
 
-    for (const auto & child : node.GetChildren()) {
-      PrintDebug(child, prefix+"  ");
+    for (const auto& child : node.GetChildren()) {
+      PrintDebug(child, prefix + "  ");
     }
   }
 
@@ -388,14 +435,13 @@ int main(int argc, char* argv[]) {
   // PARSE input file to create Abstract Syntax Tree (AST).
   // EXECUTE the AST to run your program.
 
-
-  if(PRINT_DEBUG) {
+  if (PRINT_DEBUG) {
     std::cout << in_file.rdbuf();
   }
 
   MacroCalc calc(filename);
 
-  //calc.PrintDebug();
+  // calc.PrintDebug();
 
   calc.Run();
 }

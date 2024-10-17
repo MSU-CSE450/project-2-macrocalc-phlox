@@ -16,7 +16,9 @@ public:
     PRINT,
     VAL,
     STATEMENT_BLOCK,
-    ASSIGN
+    ASSIGN,
+    LITERAL,
+    PRINT_LITERAL,
 
   };
 
@@ -25,6 +27,7 @@ private:
   double val{0.0};
   std::string literal = "";
   std::vector<ASTNode> children{};
+
 
 public:
   // CONSTRUCTORS, ETC HERE.
@@ -70,6 +73,11 @@ public:
   void SetVal(double num){
     val = num;
   }
+
+  void SetLiteral(std::string s) { literal = s; }
+
+  std::string GetLiteral() const { return literal; }
+
   
 
 
