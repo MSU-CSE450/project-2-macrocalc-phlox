@@ -65,9 +65,9 @@ public:
     children.push_back(node);
   }
 
-  size_t GetVal() const {return val;}
+  double GetVal() const {return val;}
 
-  void SetVal(size_t num){
+  void SetVal(double num){
     val = num;
   }
   

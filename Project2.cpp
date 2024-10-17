@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <sstream>
 
 // Below are some suggestions on how you might want to divide up your project.
 // You may delete this and divide it up however you like.
@@ -252,6 +253,7 @@ class MacroCalc {
 
       case Lexer::ID_Value: {
         ASTNode out_node = ASTNode(ASTNode::Type::VAL);
+        if(PRINT_DEBUG) std::cout << "ParseTerm case ID_VALUE token.lexeme: " << token.lexeme << std::endl; 
         double val = std::stod(token.lexeme);
 
         out_node.SetVal(val);
@@ -293,6 +295,8 @@ class MacroCalc {
         if(PRINT_DEBUG) std::cout << "Run: PRINT case node.GetVal(): " << node.GetVal() << std::endl;
         for (ASTNode& child : node.GetChildren()) {
           double result = Run(child);
+
+
           std::cout << result << std::endl;
         }
 
@@ -307,6 +311,7 @@ class MacroCalc {
 
       case ASTNode::VAR: {
         if(PRINT_DEBUG) std::cout << "Run: VAR case node.GetVal(): " << node.GetVal() << std::endl;
+
         assert(node.GetChildren().size() == 0);
         return symbols.VarValue(node.GetVal());
       }
