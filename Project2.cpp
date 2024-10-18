@@ -172,10 +172,6 @@ class MacroCalc {
         return ParseExpression();
     }
   }
-  /*
-  ASTNode ParseStatementBlock() {
-  }
-  */
 
   ASTNode ParseIf() {}
 

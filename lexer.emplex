@@ -1,4 +1,6 @@
-Statement (while)|(if)|(else)
+While while
+Else else
+If if
 StartScope {
 Endscope }
 Print print
@@ -6,7 +8,8 @@ Var var
 -WhiteSpace \s*
 VariableName \l+\w*
 Equal =
-Value \-?\d+\.?\d+?
+Negate -
+Value \d+\.?\d+?
 EOL ;
 StartCondition \(
 LitString \".*\"
@@ -14,4 +17,5 @@ EndCondition \)
 Equivalent (==)|(>)|(<)|(>=)|(<=)|(!=)|(\!)
 Equation (\+|\-|\/|\*|(\*\*)|%)
 -Comment \/\/.*
-AndOr (&&)|(\|\|)
+And &&
+Or \|\|
