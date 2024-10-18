@@ -143,63 +143,41 @@ class MacroCalc {
     }
   }
   bool while_enabled = false;
-  void ParseIf()
-  {
+  void ParseIf(){
+    bool curr = false;
     auto type = UseToken(emplex::Lexer::ID_Statement);
     UseToken(emplex::Lexer::ID_StartCondition);
-    if(type.lexeme == "if")
-    {
+    if(type.lexeme == "if"){
       auto object = ParseExpression();
-
       auto comp = UseToken(emplex::Lexer::ID_Equivalent);
-      if(comp.lexeme == "==")
-      {
+      if(comp.lexeme == "=="){
         auto object2 = UseToken();
-
-        if(object == std::stod(object2.lexeme))
-        {
+        if(object == std::stod(object2.lexeme)){
           UseToken(emplex::Lexer::ID_EndCondition);
           ParseStatement();
         }
-        else
-        {
-          while(CurToken().lexeme != ";")
-          {
+        else{
+          while(CurToken().lexeme != ";"){
             UseToken();
           }
           UseToken(emplex::Lexer::ID_EOL);
         }
       }
     }
-    else if(type.lexeme == "while")
-      {
-        //std::cout << ParseEquiv();
-        UseToken(emplex::Lexer::ID_EndCondition);
-        std::cout << CurToken().lexeme;
-        while(ParseEquiv() == 1)
-        {
-          //UseToken();
-          //ParseStatement();
-          
-        }
-
-        
-        // else
-        // {
-        //   while(CurToken().lexeme != ";")
-        //   {
-        //     UseToken();
-        //   }
-        //   UseToken(emplex::Lexer::ID_EOL);
-        // }
+    else if(type.lexeme == "while"){
+      //std::cout << ParseEquiv();
+      UseToken(emplex::Lexer::ID_EndCondition);
+      std::cout << CurToken().lexeme;
+      while(ParseEquiv() == 1){
       }
-    
+    }
   }
+
+
   bool isScope = false;
   void ParsePrint() {
     UseToken(emplex::Lexer::ID_Print);
     UseToken(emplex::Lexer::ID_StartCondition);
-    
     if (CurToken().id == emplex::Lexer::ID_LitString) {
         // Handle string output with variable replacement
         std::string output = "";
@@ -251,178 +229,95 @@ class MacroCalc {
      } 
     else {
         // Handle expression output
-
         double value = ParseAnd();
         std::cout << value << std::endl;
     }
     UseToken(emplex::Lexer::ID_EndCondition);
     UseToken(emplex::Lexer::ID_EOL);  
-
   }
 
   void ParseDeclare() {
-        UseToken(emplex::Lexer::ID_Var);  
-        std::string varName = CurToken().lexeme;
-        UseToken(emplex::Lexer::ID_VariableName);  
-        if(!symbols.IsInMostRecentStack(varName))
-        {
-          symbols.AddVar(varName);
-
-          if(CurToken().id == emplex::Lexer::ID_Equal) {
-              UseToken(emplex::Lexer::ID_Equal);  
-              double value = ParseExpression(); 
-              symbols.SetValue(varName, value); 
-              
-          }
-          else
-          {
-            Error(CurToken(), "left side must be variable");
-          }
-          UseToken(emplex::Lexer::ID_EOL);
-        }
-        else{
-          Error(CurToken(), "Redeclaring Variable");
-        }
-         
+    UseToken(emplex::Lexer::ID_Var);  
+    std::string varName = CurToken().lexeme;
+    UseToken(emplex::Lexer::ID_VariableName);  
+    if(!symbols.IsInMostRecentStack(varName)){
+      symbols.AddVar(varName);
+      if(CurToken().id == emplex::Lexer::ID_Equal) {
+          UseToken(emplex::Lexer::ID_Equal);  
+          double value = ParseExpression(); 
+          symbols.SetValue(varName, value);  
+      }
+      else{
+        Error(CurToken(), "left side must be variable");
+      }
+      UseToken(emplex::Lexer::ID_EOL);
     }
+    else{
+      Error(CurToken(), "Redeclaring Variable");
+    }
+  }
 
   double ParseExpression() {
-          return ParseAddition();
-      }
+    return ParseAddition();
+  }
+
   double ParseAnd(){
     double left = ParseEquiv();
     while(CurToken().lexeme == "&&" or CurToken().lexeme == "||"){
       auto op = CurToken().lexeme;
       UseToken();
       double right = ParseEquiv();
-      if(CurToken().lexeme == "&&")
-      {
-        if(left == 0)
-        {
-          return 0;
-        }
-        else if(left != right)
-        {
-          return 0;
-        }
-        else if(right == 0)
-        {
-          return 0;
-        }
-        else if(left == 1 and right == 1)
-        {
-          return 1;
-        }
+      if(CurToken().lexeme == "&&"){
+        if(left == 0 and right == 1) return 1;
+        else return 0;
       }
-      else if(CurToken().lexeme == "||")
-      {
-        if(left == 1)
-        {
-          return 1;
-        }
-        else if(right == 1)
-        {
-          return 1;
-        }
-        else if(left == 1 and right == 1)
-        {
-          return 1;
-        }
-        else if(left == 0 and right == 1)
-        {
-          return 1;
-        }
-        else
-        {
-          return 0;
-        }
+      else if(CurToken().lexeme == "||"){
+        if(left == 0 and right == 0) return 0;
+        else return 1;
       }
     }
     return left;
   }
+  
   double ParseEquiv() {
-    if(CurToken().lexeme == "!")
-    {
-      double right = ParseAddition();
-      if(right != 0)
-      {
-        return 0;
-      }
-      else
-      {
-        return 1;
-      }
+    if(CurToken().lexeme == "!"){
+      UseToken(); 
+      double right = ParseEquiv(); 
+      return right == 0 ? 1 : 0;
     }
     double left = ParseAddition();
     while (CurToken().lexeme == "==" or CurToken().lexeme == "!=" or CurToken().lexeme == ">" or CurToken().lexeme == "<" or CurToken().lexeme == ">=" or CurToken().lexeme == "<=") {
-          auto op = CurToken().lexeme;
-          UseToken(CurToken().id);
-          double right = ParseAddition();
-
-          if (op == "==") {
-              if(left == right)
-              {
-                return 1;
-              }
-              else
-              {
-                return 0;
-              }
-          } 
-          else if(op == "!="){
-              if(left != right)
-              {
-                return 1;
-              }
-              else
-              {
-                return 0;
-              }
-          }
-          else if(op == ">"){
-              if(left > right)
-              {
-                return 1;
-              }
-              else
-              {
-                return 0;
-              }
-          }
-          else if(op == ">="){
-              if(left >= right)
-              {
-                return 1;
-              }
-              else
-              {
-                return 0;
-              }
-          }
-          else if(op == "<="){
-              if(left <= right)
-              {
-                return 1;
-              }
-              else
-              {
-                return 0;
-              }
-          }
-          else if(op == "<"){
-              if(left < right)
-              {
-                return 1;
-              }
-              else
-              {
-                return 0;
-              }
-          }
-          
+      auto op = CurToken().lexeme;
+      UseToken(CurToken().id);
+      double right = ParseAddition();
+      if (op == "==") {
+        if(left == right) return 1;
+        else return 0;
+      } 
+      else if(op == "!="){
+        if(left != right) return 1;
+        else return 0;
       }
-      return left;
+      else if(op == ">"){
+        if(left > right) return 1;
+        else return 0;
+      }
+      else if(op == ">="){
+        if(left >= right) return 1;
+        else return 0;
+      }
+      else if(op == "<="){
+        if(left <= right) return 1;
+        else return 0;
+      }
+      else if(op == "<"){
+        if(left < right) return 1;
+        else return 0;
+      }
+    }
+    return left;
   }
+
   void ParseNewVal()
   {
     std::string varName = CurToken().lexeme;
@@ -447,79 +342,70 @@ class MacroCalc {
   }
     // Parse additive expressions (e.g., addition and subtraction)
   double ParseAddition() {
-      double left = ParseMult();
-
-      while (CurToken().lexeme == "+" or CurToken().lexeme == "-") {
-          auto op = CurToken().lexeme;
-          UseToken(CurToken().id);  // Consume '+' or '-'
-          double right = ParseMult();
-
-          if (op == "+") {
-              left += right;
-          } else {
-              left -= right;
-          }
+    double left = ParseMult();
+    while (CurToken().lexeme == "+" or CurToken().lexeme == "-") {
+      auto op = CurToken().lexeme;
+      UseToken(CurToken().id);  // Consume '+' or '-'
+      double right = ParseMult();
+      if (op == "+") {
+        left += right;
+      } else {
+        left -= right;
       }
-
-      return left;
+    }
+    return left;
   }
 
   double ParseMult() {
-      double left = ParsePrim();
-
-      while (CurToken().lexeme == "*" or CurToken().lexeme == "/" or CurToken().lexeme == "**" or CurToken().lexeme == "%") {
-          auto op = CurToken().lexeme;
-          UseToken(CurToken().id);  // Consume '*', '/', or '**'
-          double right = ParsePrim();
-
-          if (op == "*") {
-              left *= right;
-          } 
-          else if (op == "/") {
-              if (right == 0) {
-                  Error(CurToken(),"Divide by zero");
-              }
-              left /= right;
-          } 
-          else if (op == "**") {
-              left = pow(left, right);
-          }
-          else if (op == "%") {
-              if (right == 0) {
-                  Error(CurToken(),"Divide by zero");
-              }
-              return fmod(left, right);
-
-          } 
+    double left = ParsePrim();
+    while (CurToken().lexeme == "*" or CurToken().lexeme == "/" or CurToken().lexeme == "**" or CurToken().lexeme == "%") {
+      auto op = CurToken().lexeme;
+      UseToken(CurToken().id);  // Consume '*', '/', or '**'
+      double right = ParsePrim();
+      if (op == "*") {
+        left *= right;
+      } 
+      else if (op == "/") {
+        if (right == 0) {
+            Error(CurToken(),"Divide by zero");
+        }
+        left /= right;
+      } 
+      else if (op == "**") {
+        left = pow(left, right);
       }
-
-      return left;
+      else if (op == "%") {
+        if (right == 0) {
+          Error(CurToken(),"Divide by zero");
+        }
+        return fmod(left, right);
+      } 
+    }
+    return left;
   }
-
   // Parse primary expressions (e.g., numbers, variables, or parenthesized expressions)
   double ParsePrim() {
-      if (CurToken().id == emplex::Lexer::ID_Value) {
-        double value = std::stod(CurToken().lexeme);  // Convert token to double
-        UseToken(emplex::Lexer::ID_Value);  // Consume the numeric value token
-        return value;
-      } 
+    if (CurToken().id == emplex::Lexer::ID_Value) {
+      double value = std::stod(CurToken().lexeme);  // Convert token to double
+      UseToken(emplex::Lexer::ID_Value);  // Consume the numeric value token
+      return value;
+    } 
     else if (CurToken().id == emplex::Lexer::ID_VariableName) {
-        std::string varName = CurToken().lexeme;
-        UseToken(emplex::Lexer::ID_VariableName);
-
-        if (!symbols.HasVar(varName)) {
-            Error(token_id, "Undefined variable: ", varName);
-        }
-        return symbols.GetValue(varName);  // Return the value of the variable
+      std::string varName = CurToken().lexeme;
+      UseToken(emplex::Lexer::ID_VariableName);
+      if (!symbols.HasVar(varName)) {
+        Error(token_id, "Undefined variable: ", varName);
+      }
+      return symbols.GetValue(varName);  // Return the value of the variable
     } 
     else if (CurToken().id == emplex::Lexer::ID_StartCondition) {
-        UseToken(emplex::Lexer::ID_StartCondition);
-        double expr = ParseExpression();  // Parse expression inside parentheses
-        UseToken(emplex::Lexer::ID_EndCondition);  // Expect closing parenthesis
-        return expr;
+      UseToken(emplex::Lexer::ID_StartCondition);
+      double expr = ParseExpression();  // Parse expression inside parentheses
+      UseToken(emplex::Lexer::ID_EndCondition);  // Expect closing parenthesis
+      return expr;
     }
     else if(CurToken().id != emplex::Lexer::ID__EOF_){
-        Error(token_id, "Unexpected token in primary expression: ", TokenName(CurToken().id));
+      Error(token_id, "Unexpected token in primary expression: ", TokenName(CurToken().id));
     }
   }
 };
