@@ -83,7 +83,7 @@ public:
 
   // CODE TO ADD CHILDREN AND SETUP AST NODE HERE.
   void AddChild(ASTNode node) { 
-    assert(node.NodeType() != EMPTY && children.size() < 2);
+    assert(node.NodeType() != EMPTY);
     children.push_back(node);
   }
 

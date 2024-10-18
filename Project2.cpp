@@ -206,8 +206,16 @@ class MacroCalc {
     UseToken(emplex::Lexer::ID_EndCondition, "Expected )");
 
     auto right = ParseStatement();
-
     ASTNode out_node(ASTNode::IF, left, right);
+
+    if(CurToken() == emplex::Lexer::ID_Else) {
+      UseToken(emplex::Lexer::ID_Else);
+
+      ASTNode else_statement = ParseStatement();
+      out_node.AddChild(else_statement);
+    }
+
+
 
     return out_node;
   }
@@ -877,6 +885,8 @@ class MacroCalc {
 
         if (left != 0.0) {
           Run(node.GetChild(1));
+        } else if(node.GetChildren().size() > 2){
+          Run(node.GetChild(2));
         }
 
         break;
