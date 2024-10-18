@@ -263,18 +263,17 @@ class MacroCalc {
 
   double ParseAnd(){
     double left = ParseEquiv();
-    while(CurToken().lexeme == "&&" or CurToken().lexeme == "||"){
-      auto op = CurToken().lexeme;
+    if(CurToken().lexeme == "&&"){
       UseToken();
       double right = ParseEquiv();
-      if(CurToken().lexeme == "&&"){
-        if(left == 0 and right == 1) return 1;
-        else return 0;
-      }
-      else if(CurToken().lexeme == "||"){
-        if(left == 0 and right == 0) return 0;
-        else return 1;
-      }
+      if(left == 1 and right == 1) return 1;
+      else return 0;      
+    }
+    if(CurToken().lexeme == "||"){
+      UseToken();
+      double right = ParseEquiv();
+      if(left == 0 and right == 0) return 0;
+      else return 1;  
     }
     return left;
   }
