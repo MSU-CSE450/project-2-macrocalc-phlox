@@ -45,20 +45,14 @@ public:
     return temp;
   }
   // FUNCTIONS TO MANAGE VARIABLES
-  size_t GetNumVars() const { return var_info.size(); }
-  size_t GetVarID(std::string name) const {
-    for (auto it = scope.rbegin();
-         it != scope.rend();
-         ++it)
-    {
-      if (it->count(name)) return it->find(name)->second;
+  bool HasVar(std::string var_name) const {
+    for (auto it = scope.rbegin(); it != scope.rend(); ++it) {
+      if (it->find(var_name) != it->end()) {
+        return true;
+      }
     }
-
-    return NO_ID;
+    return false;
   }
-  bool HasVar(std::string name) const { 
-    return (GetVarID(name) != NO_ID); 
-    }
   size_t AddVar(std::string name) { 
     auto &curr_scope = scope.back();
     if (curr_scope.count(name)) {
@@ -69,51 +63,21 @@ public:
     curr_scope[name] = var_id;
     return var_id;
   }
-  double GetValue(std::string name) const {
-    assert(HasVar(name));
-    double val;
-    for(auto it : scope)
-    {
-      for(auto i : it)
-      {
-        auto a = i.first;
-        if(i.first == name)
-        {
-          val = i.second;
-        }
+  double GetValue(std::string var_name) const {
+    for (auto it = scope.rbegin(); it != scope.rend(); ++it) {
+      if (it->find(var_name) != it->end()) {
+        return it->at(var_name);
       }
     }
-    auto mp = scope.back();
-    return val;
+    return 0;
   }
-  void SetValue(std::string name, double value) { 
-    std::unordered_map<std::string, double> curr_map = PopScope();
-    curr_map[name] = value;
-    PushScope(curr_map);
-    // std::vector<std::unordered_map<std::string, double>> newScope;
-    // while(scope.size() > 0)
-    // {
-    //   newScope.insert(newScope.begin(), PopScope());
-    // }
-    // for(auto vec : newScope)
-    // {
-    //   for(auto i : vec)
-    //   {
-    //     if(i.first == name)
-    //     {
-    //       i.second = value;
-    //       //std::cout << i.first << " " << i.second;
-    //     }
-    //   }
-    // }
-    // for(auto vec : newScope)
-    // {
-    //   std::unordered_map<std::string, double> temp;
-    //   for(auto i : vec)
-    //   {
-    //     std::cout << i.first << " " << i.second;
-    //   }
-    // }
+  void SetValue(const std::string& var_name, double value) {
+    for (auto it = scope.rbegin(); it != scope.rend(); ++it) {
+      if (it->find(var_name) != it->end()) {
+        (*it)[var_name] = value;
+        return;
+      }
+    }
   }
   bool IsInMostRecentStack(std::string name)
   {
