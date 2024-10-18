@@ -127,6 +127,7 @@ class MacroCalc {
   ASTNode MakeVarNode(const emplex::Token& token) {  // Wordlang Stuff
 
     size_t var_id = symbols.GetVarID(token.lexeme);
+    if(var_id == SymbolTable::NO_ID) Error(token.line_id, "Undeclared Variable", token.lexeme);
     if (PRINT_DEBUG)
       std::cout << "MakeVarNode var_id found in symbol table: " << var_id
                 << "of lexeme: " << token.lexeme << std::endl;
@@ -297,6 +298,10 @@ class MacroCalc {
     auto left = ParseExpressionOr();
 
     if (UseTokenIf(emplex::Lexer::ID_Equal)) {
+      if (left.NodeType() != ASTNode::VAR) {
+        Error(CurToken().line_id, "The left side of an assignment must be a var");
+      }
+
       ASTNode right = ParseExpressionAssign();
       return ASTNode(ASTNode::ASSIGN, left, right);
     }
@@ -420,7 +425,12 @@ class MacroCalc {
            CurToken() == emplex::Lexer::ID_LessEqual) {
       int token = UseToken();
       auto right = ParseExpressionAddSub();
-
+      if (CurToken() == emplex::Lexer::ID_Less ||
+          CurToken() == emplex::Lexer::ID_Greater ||
+          CurToken() == emplex::Lexer::ID_GreaterEqual ||
+          CurToken() == emplex::Lexer::ID_LessEqual) {
+          Error(CurToken().line_id, "Comparisons should be non-associative", CurToken().lexeme);
+        }
       switch (token) {
         case emplex::Lexer::ID_Less: {
           left = ASTNode(ASTNode::LESS, left, right);
@@ -725,6 +735,7 @@ class MacroCalc {
 
         double left = Run(node.GetChild(0));
         double right = Run(node.GetChild(1));
+        if(right == 0) Error(CurToken().line_id, "Division by 0");
 
         return left / right;
         break;
@@ -737,7 +748,7 @@ class MacroCalc {
 
         double left = Run(node.GetChild(0));
         double right = Run(node.GetChild(1));
-
+        if(right == 0) Error(CurToken().line_id, "Mod by 0");
         return fmod(left, right);
         break;
       }
