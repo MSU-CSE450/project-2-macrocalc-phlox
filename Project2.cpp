@@ -2,12 +2,12 @@
 
 #include <cmath>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <iomanip>
 
 // Below are some suggestions on how you might want to divide up your project.
 // You may delete this and divide it up however you like.
@@ -17,8 +17,8 @@
 bool PRINT_DEBUG = false;
 
 template <typename... Ts>
-void Error(size_t line_num, Ts... message) {
-  std::cerr << "ERROR (line " << line_num << "): ";
+void Error(Ts... message) {
+  std::cerr << "ERROR ";
   (std::cerr << ... << message);
   std::cerr << std::endl;
   exit(1);
@@ -61,7 +61,7 @@ class SymbolTable {
                 << std::endl;
     auto& scope = scope_stack.back();
     if (scope.count(name)) {
-      Error(line_num, "Redeclaration of variable '", name, "'.");
+      Error("Redeclaration of variable '", name, "' Originally declared on line: ", var_info[GetVarID(name)].declare_line);
     }
     size_t var_id = var_info.size();
     var_info.emplace_back(name, line_num);
@@ -107,10 +107,10 @@ class MacroCalc {
   emplex::Token UseToken(int required_id, std::string err_message = "") {
     if (CurToken() != required_id) {
       if (err_message.size())
-        Error(CurToken(), err_message);
+        Error(err_message);
       else {
-        Error(CurToken(), "Expected token type ", TokenName(required_id),
-              ", but found ", TokenName(CurToken()));
+        Error("Syntax Error: Expected token type ",
+              TokenName(required_id), ", but found ", TokenName(CurToken()));
       }
     }
     return UseToken();
@@ -195,16 +195,18 @@ class MacroCalc {
       out_node.AddChild(ParseStatement());
     }
     symbols.DecScope();
+
+    if(CurToken() != emplex::Lexer::ID_Endscope) Error("Syntax Error: Could not find closing }");
     UseToken(emplex::Lexer::ID_Endscope);
     return out_node;
   }
 
   ASTNode ParseIf() {
     UseToken(emplex::Lexer::ID_If);
-    UseToken(emplex::Lexer::ID_StartCondition, "Expected (");
+    UseToken(emplex::Lexer::ID_StartCondition, "Syntax Error: Expected (");
 
     auto left = ParseExpression();
-    UseToken(emplex::Lexer::ID_EndCondition, "Expected )");
+    UseToken(emplex::Lexer::ID_EndCondition, "Syntax Error: Expected )");
 
     auto right = ParseStatement();
     ASTNode out_node(ASTNode::IF, left, right);
@@ -221,10 +223,10 @@ class MacroCalc {
 
   ASTNode ParseWhile() {
     UseToken(emplex::Lexer::ID_While);
-    UseToken(emplex::Lexer::ID_StartCondition, "Expected (");
+    UseToken(emplex::Lexer::ID_StartCondition, "Syntax Error: Expected (");
 
     auto left = ParseExpression();
-    UseToken(emplex::Lexer::ID_EndCondition, "Expected )");
+    UseToken(emplex::Lexer::ID_EndCondition, "Syntax Error: Expected )");
     auto right = ParseStatement();
 
     ASTNode out_node(ASTNode::WHILE, left, right);
@@ -267,11 +269,11 @@ class MacroCalc {
     auto var_token = UseToken(emplex::Lexer::ID_Var);
     auto id_token = UseToken(emplex::Lexer::ID_VariableName);
 
-    symbols.AddVar(var_token, id_token.lexeme);
+    symbols.AddVar(var_token.line_id, id_token.lexeme);
 
     if (UseTokenIf(';')) return ASTNode{};
 
-    UseToken(emplex::Lexer::ID_Equal, "Expected ';' or '='.");
+    UseToken(emplex::Lexer::ID_Equal, "Syntax Error: Expected ';' or '='.");
 
     auto lhs_node = MakeVarNode(id_token);
     auto rhs_node = ParseExpression();
@@ -421,6 +423,13 @@ class MacroCalc {
       int token = UseToken();
       auto right = ParseExpressionAddSub();
 
+      if (CurToken() == emplex::Lexer::ID_Less ||
+          CurToken() == emplex::Lexer::ID_Greater ||
+          CurToken() == emplex::Lexer::ID_GreaterEqual ||
+          CurToken() == emplex::Lexer::ID_LessEqual) {
+        Error("Comparisons should be non-associative");
+      }
+
       switch (token) {
         case emplex::Lexer::ID_Less: {
           left = ASTNode(ASTNode::LESS, left, right);
@@ -546,6 +555,7 @@ class MacroCalc {
       }
 
       case Lexer::ID_VariableName: {
+        if(!symbols.HasVar(token.lexeme)) Error("Variables must be declared before use");
         return MakeVarNode(token);
       }
 
@@ -556,7 +566,8 @@ class MacroCalc {
       }
 
       default:
-        Error(token, "Expected expression. Found ", TokenName(token), ".");
+        Error("Syntax Error: Expected expression. Found ", TokenName(token),
+              ".");
     }
 
     return ASTNode{};
@@ -572,19 +583,20 @@ class MacroCalc {
           isScope = true;
         } else if (ch == '}') {
           if (!symbols.HasVar(currvar)) {
-            Error(CurToken(), "Variable does not exist");
+            Error("Unknown identifier name used: " + currvar);
           }
 
           std::ostringstream out;
-          out << std::fixed << std::setprecision(5) << symbols.VarValue(symbols.GetVarID(currvar));
+          out << std::fixed << std::setprecision(5)
+              << symbols.VarValue(symbols.GetVarID(currvar));
 
           std::string intermediate = out.str();
           int i = intermediate.size();
-          
-          //int i = std::to_string(symbols.VarValue(symbols.GetVarID(currvar)))
-                      //.size();
-          //std::string intermediate =
-              //std::to_string(symbols.VarValue(symbols.GetVarID(currvar)));
+
+          // int i = std::to_string(symbols.VarValue(symbols.GetVarID(currvar)))
+          //.size();
+          // std::string intermediate =
+          // std::to_string(symbols.VarValue(symbols.GetVarID(currvar)));
           std::string last_dig = "";
           while (intermediate.back() == '0') {
             if (intermediate.back() == '0') {
@@ -665,8 +677,11 @@ class MacroCalc {
         if (PRINT_DEBUG)
           std::cout << "Run: ASSIGN case node.GetVal(): " << node.GetVal()
                     << std::endl;
+
         assert(node.GetChildren().size() == 2);
-        assert(node.GetChild(0).NodeType() == ASTNode::VAR);
+        if (node.GetChild(0).NodeType() != ASTNode::VAR) {
+          Error("Attempted assignment to anything other than a legal variable");
+        }
         if (PRINT_DEBUG)
           std::cout << "  node.GetChild(0).GetVal(); : "
                     << node.GetChild(0).GetVal() << std::endl;
@@ -726,6 +741,10 @@ class MacroCalc {
         double left = Run(node.GetChild(0));
         double right = Run(node.GetChild(1));
 
+        if (right == 0.0) {
+          Error("Cannot divide by zero");
+        }
+
         return left / right;
         break;
       }
@@ -737,6 +756,10 @@ class MacroCalc {
 
         double left = Run(node.GetChild(0));
         double right = Run(node.GetChild(1));
+
+        if (right == 0.0) {
+          Error("Cannot mod by zero");
+        }
 
         return fmod(left, right);
         break;
