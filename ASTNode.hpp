@@ -19,6 +19,23 @@ public:
     ASSIGN,
     LITERAL,
     PRINT_LITERAL,
+    NEGATE, // -
+    LOGICAL_NOT,
+    EXPONENT,
+    AND,
+    OR,
+    ADD,
+    SUBTRACT, // -
+    MULT,
+    DIV,
+    MOD,
+    EQUALITY,
+    NON_EQUALITY,
+    LESS,
+    LESS_EQUAL,
+    GREATER,
+    GREATER_EQUAL
+
 
   };
 

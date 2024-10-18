@@ -184,10 +184,11 @@ class MacroCalc {
 
     UseToken(emplex::Lexer::ID_Print);
     UseToken(emplex::Lexer::ID_StartCondition);
-    std::string literal = CurToken().lexeme.substr(1,CurToken().lexeme.length() - 2);
-    if(UseTokenIf(emplex::Lexer::ID_LitString)) {
+    std::string literal =
+        CurToken().lexeme.substr(1, CurToken().lexeme.length() - 2);
+    if (UseTokenIf(emplex::Lexer::ID_LitString)) {
       ASTNode print_node_literal{ASTNode::Type::PRINT_LITERAL};
-      
+
       print_node_literal.SetLiteral(literal);
 
       UseToken(emplex::Lexer::ID_EndCondition);
@@ -228,29 +229,55 @@ class MacroCalc {
     if (PRINT_DEBUG)
       std::cout << "ParseExpression called CurToken: " << CurToken().lexeme
                 << std::endl;
-    using namespace emplex;
-    ASTNode term_node = ParseTerm();
-
-    auto token = CurToken();
-    /*
-    switch(token) {
-      case Lexer::ID_Equal: return ParseExpressionAssign(term_node);
-    }
-    */
-
-    if (token == emplex::Lexer::ID_Equal) {
-      //
-      return ParseExpressionAssign(term_node);
-    } else if (token == emplex::Lexer::ID_LitString) {
-      ASTNode out_node(ASTNode::Type::LITERAL);
-
-      out_node.SetLiteral(token.lexeme);
-      return out_node;   
-    }
-
-    return term_node;
+    return ParseExpressionAssign();
   }
 
+  // Right assoc. -> Recursively parse with same function
+  // Pretty much taken direct from Wordlang
+  ASTNode ParseExpressionAssign() {
+    if (PRINT_DEBUG)
+      std::cout << "ParseExpressionAssign called CurToken: "
+                << CurToken().lexeme << std::endl;
+
+    auto left = ParseExpressionOr();
+
+    if (UseTokenIf(emplex::Lexer::ID_Equal)) {
+      ASTNode right = ParseExpressionAssign();
+      return ASTNode(ASTNode::ASSIGN, left, right);
+    }
+
+    return left;
+  }
+
+  /*
+   ASTNode ParseExpression() {
+     if (PRINT_DEBUG)
+       std::cout << "ParseExpression called CurToken: " << CurToken().lexeme
+                 << std::endl;
+     using namespace emplex;
+     ASTNode term_node = ParseTerm();
+
+     auto token = CurToken();
+     /*
+     switch(token) {
+       case Lexer::ID_Equal: return ParseExpressionAssign(term_node);
+     }
+
+
+     if (token == emplex::Lexer::ID_Equal) {
+       //
+       return ParseExpressionAssign(term_node);
+     } else if (token == emplex::Lexer::ID_LitString) {
+       ASTNode out_node(ASTNode::Type::LITERAL);
+
+       out_node.SetLiteral(token.lexeme);
+       return out_node;
+     }
+
+     return term_node;
+   }
+   */
+  /*
   ASTNode ParseExpressionAssign(ASTNode left) {
     if (PRINT_DEBUG)
       std::cout << "ParseExpressionAssign called CurToken: "
@@ -267,6 +294,169 @@ class MacroCalc {
       // Error
     }
   }
+  */
+
+  // Left Assoc. -> Parse with loop (left to right)
+  // Inspired from WordLang ParseExpressionAddSub
+  ASTNode ParseExpressionOr() {
+    if (PRINT_DEBUG)
+      std::cout << "ParseExpressionOr called CurToken: " << CurToken().lexeme
+                << std::endl;
+    auto left = ParseExpressionAnd();
+
+    while (CurToken() == emplex::Lexer::ID_Or) {
+      int token = UseToken();
+      ASTNode right = ParseExpressionAnd();
+      left = ASTNode{ASTNode::OR, left, right};
+      left.SetVal(token);
+    }
+
+    return left;
+  }
+  // Left Assoc. -> Parse with loop (left to right)
+  // Inspired from WordLang ParseExpressionAddSub
+  ASTNode ParseExpressionAnd() {
+    if (PRINT_DEBUG)
+      std::cout << "ParseExpressionAnd called CurToken: " << CurToken().lexeme
+                << std::endl;
+    auto left = ParseExpressionEquality();
+
+    while (CurToken() == emplex::Lexer::ID_And) {
+      int token = UseToken();
+      ASTNode right = ParseExpressionEquality();
+      left = ASTNode{ASTNode::AND, left, right};
+      left.SetVal(token);
+    }
+
+    return left;
+  }
+  // Non Assoc. -> single calls for lhs, rhs (no chaining allowed)
+  ASTNode ParseExpressionEquality() {
+    if (PRINT_DEBUG)
+      std::cout << "ParseExpressionEquality called CurToken: "
+                << CurToken().lexeme << std::endl;
+    auto left = ParseExpressionCompare();
+
+    while (CurToken() == emplex::Lexer::ID_Equality ||
+           CurToken() == emplex::Lexer::ID_NotEqual) {
+      int token = UseToken();
+      auto right = ParseExpressionCompare();
+
+      if (token == emplex::Lexer::ID_Equality) {
+        left = ASTNode(ASTNode::EQUALITY, left, right);
+
+      } else {
+        left = ASTNode(ASTNode::NON_EQUALITY, left, right);
+      }
+    }
+
+    return left;
+  }
+  // Non Assoc. -> single calls for lhs, rhs (no chaining allowed)
+  ASTNode ParseExpressionCompare() {
+    if (PRINT_DEBUG)
+      std::cout << "ParseExpressionCompare called CurToken: "
+                << CurToken().lexeme << std::endl;
+    auto left = ParseExpressionAddSub();
+
+    while (CurToken() == emplex::Lexer::ID_Less ||
+           CurToken() == emplex::Lexer::ID_Greater ||
+           CurToken() == emplex::Lexer::ID_GreaterEqual ||
+           CurToken() == emplex::Lexer::ID_LessEqual) {
+      int token = UseToken();
+      auto right = ParseExpressionAddSub();
+
+      switch (token) {
+        case emplex::Lexer::ID_Less: {
+          left = ASTNode(ASTNode::LESS, left, right);
+          break;
+        }
+
+        case emplex::Lexer::ID_Greater: {
+          left = ASTNode(ASTNode::GREATER, left, right);
+          break;
+        }
+        case emplex::Lexer::ID_GreaterEqual: {
+          left = ASTNode(ASTNode::GREATER_EQUAL, left, right);
+          break;
+        }
+        case emplex::Lexer::ID_LessEqual: {
+          left = ASTNode(ASTNode::LESS_EQUAL, left, right);
+          break;
+        }
+      }
+    }
+
+    return left;
+  }
+  // Left Assoc. -> Parse with loop (left to right)
+  // Inspired from WordLang ParseExpressionAddSub
+  ASTNode ParseExpressionAddSub() {
+    if (PRINT_DEBUG)
+      std::cout << "ParseExpressionAddSub called CurToken: "
+                << CurToken().lexeme << std::endl;
+    auto left = ParseExpressionModDivMulMod();
+
+    while (CurToken() == emplex::Lexer::ID_Plus ||
+           CurToken() == emplex::Lexer::ID_Minus) {
+      int token = UseToken();
+      auto right = ParseExpressionModDivMulMod();
+
+      if (token == emplex::Lexer::ID_Plus) {
+        left = ASTNode{ASTNode::ADD, left, right};
+      } else {
+        left = ASTNode{ASTNode::SUBTRACT, left, right};
+      }
+
+      left.SetVal(token);
+    }
+
+    return left;
+  }
+
+  // Left Assoc. -> Parse with loop (left to right)
+  // Inspired from WordLang ParseExpressionAddSub
+  ASTNode ParseExpressionModDivMulMod() {
+    if (PRINT_DEBUG)
+      std::cout << "ParseExpressionDivMulMod called CurToken: "
+                << CurToken().lexeme << std::endl;
+    auto left = ParseExpressionExponentiate();
+
+    while (CurToken() == emplex::Lexer::ID_Multiply ||
+           CurToken() == emplex::Lexer::ID_Divide ||
+           CurToken() == emplex::Lexer::ID_Modulus) {
+      int token = UseToken();
+      auto right = ParseExpressionExponentiate();
+
+      if (token == emplex::Lexer::ID_Multiply) {
+        left = ASTNode{ASTNode::MULT, left, right};
+      } else if (token == emplex::Lexer::ID_Divide) {
+        left = ASTNode{ASTNode::DIV, left, right};
+      } else {
+        left = ASTNode{ASTNode::MOD, left, right};
+      }
+      left.SetVal(token);
+    }
+
+    return left;
+  }
+
+  // Right assoc. -> Recursively parse with same function
+  // Mirroed the Assign fuinction
+  ASTNode ParseExpressionExponentiate() {
+    if (PRINT_DEBUG)
+      std::cout << "ParseExpressionExponentiate called CurToken: "
+                << CurToken().lexeme << std::endl;
+
+    auto left = ParseTerm();
+
+    if (UseTokenIf(emplex::Lexer::ID_Exponent)) {
+      ASTNode right = ParseExpressionExponentiate();
+      return ASTNode(ASTNode::EXPONENT, left, right);
+    }
+
+    return left;
+  }
 
   ASTNode ParseTerm() {
     if (PRINT_DEBUG)
@@ -276,6 +466,16 @@ class MacroCalc {
 
     switch (token) {
       using namespace emplex;
+
+      case Lexer::ID_Minus: {
+        ASTNode right = ParseTerm();
+        return ASTNode(ASTNode::Type::NEGATE, right);
+      }
+
+      case Lexer::ID_Negate: {
+        ASTNode right = ParseTerm();
+        return ASTNode(ASTNode::Type::LOGICAL_NOT, right);
+      }
 
       case Lexer::ID_Value: {
         ASTNode out_node = ASTNode(ASTNode::Type::VAL);
@@ -292,6 +492,12 @@ class MacroCalc {
 
       case Lexer::ID_VariableName: {
         return MakeVarNode(token);
+      }
+
+      case Lexer::ID_StartCondition: {
+        ASTNode out_node = ParseExpression();
+        UseToken(Lexer::ID_EndCondition);
+        return out_node;
       }
 
       default:
@@ -367,9 +573,253 @@ class MacroCalc {
       }
 
       case ASTNode::PRINT_LITERAL:
-        if(PRINT_DEBUG) std::cout << "Run: PRINT_LITERAL case" <<std::endl;
+        if (PRINT_DEBUG) std::cout << "Run: PRINT_LITERAL case" << std::endl;
         std::cout << node.GetLiteral() << std::endl;
+        break;
+      case ASTNode::ADD: {
+        if (PRINT_DEBUG) std::cout << "Run: ADD case" << std::endl;
 
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        return left + right;
+
+        break;
+      }
+
+      case ASTNode::EXPONENT: {
+        if (PRINT_DEBUG) std::cout << "Run: EXPONENT case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        return pow(left, right);
+
+        break;
+      }
+
+      case ASTNode::MULT: {
+        if (PRINT_DEBUG) std::cout << "Run: MULT case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        return left * right;
+        break;
+      }
+
+      case ASTNode::DIV: {
+        if (PRINT_DEBUG) std::cout << "Run: DIV case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        return left / right;
+        break;
+      }
+
+      case ASTNode::MOD: {
+        if (PRINT_DEBUG) std::cout << "Run: MOD case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        return fmod(left, right);
+        break;
+      }
+
+      case ASTNode::NEGATE: {
+        if (PRINT_DEBUG) std::cout << "Run: NEGATE case" << std::endl;
+
+        assert(node.GetChildren().size() == 1);
+
+        double left = Run(node.GetChild(0));
+
+        return left * -1.0;
+        break;
+      }
+
+      case ASTNode::SUBTRACT: {
+        if (PRINT_DEBUG) std::cout << "Run: SUBTRACT case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        return left - right;
+        break;
+      }
+
+      case ASTNode::LOGICAL_NOT: {
+        if (PRINT_DEBUG) std::cout << "Run: LOGICAL_NOT case" << std::endl;
+
+        assert(node.GetChildren().size() == 1);
+
+        double left = Run(node.GetChild(0));
+
+        if (left == 0.0) {
+          return 1.0;
+        } else {
+          return 0.0;
+        }
+
+        break;
+      }
+
+      case ASTNode::EQUALITY: {
+        if (PRINT_DEBUG) std::cout << "Run: SUBTRACT case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        if (left == right) {
+          return 1.0;
+        } else {
+          return 0.0;
+        }
+
+        break;
+      }
+
+      case ASTNode::NON_EQUALITY: {
+        if (PRINT_DEBUG) std::cout << "Run: SUBTRACT case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        if (left == right) {
+          return 0.0;
+        } else {
+          return 1.0;
+        }
+
+        break;
+      }
+
+      case ASTNode::LESS: {
+        if (PRINT_DEBUG) std::cout << "Run: LESS case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        if (left < right) {
+          return 1.0;
+        } else {
+          return 0.0;
+        }
+
+        break;
+      }
+      case ASTNode::LESS_EQUAL: {
+        if (PRINT_DEBUG) std::cout << "Run: LESS_EQUAL case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        if (left <= right) {
+          return 1.0;
+        } else {
+          return 0.0;
+        }
+
+        break;
+      }
+      case ASTNode::GREATER: {
+        if (PRINT_DEBUG) std::cout << "Run: GREATER case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        if (left > right) {
+          return 1.0;
+        } else {
+          return 0.0;
+        }
+
+        break;
+      }
+
+      case ASTNode::GREATER_EQUAL: {
+        if (PRINT_DEBUG) std::cout << "Run: GREATER_EQUAL case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+        double right = Run(node.GetChild(1));
+
+        if (left >= right) {
+          return 1.0;
+        } else {
+          return 0.0;
+        }
+
+        break;
+      }
+
+      case ASTNode::AND: {
+        if (PRINT_DEBUG) std::cout << "Run: AND case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+
+        if (left == 0.0) {
+          return 0.0;
+        }
+
+        double right = Run(node.GetChild(1));
+
+        if (left != 0.0 && right != 0.0) {
+          return 1.0;
+        } else {
+          return 0.0;
+        }
+
+        break;
+      }
+
+      case ASTNode::OR: {
+        if (PRINT_DEBUG) std::cout << "Run: OR case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+
+        if (left != 0.0) {
+          return 1.0;
+        }
+
+        double right = Run(node.GetChild(1));
+
+        if (left != 0.0 || right != 0.0) {
+          return 1.0;
+        } else {
+          return 0.0;
+        }
+
+        break;
+      }
     }
 
     return 0.0;
@@ -401,6 +851,58 @@ class MacroCalc {
 
       case ASTNode::VAL:
         std::cout << "VAL" << std::endl;
+        break;
+      case ASTNode::PRINT_LITERAL:
+        std::cout << "PRINT_LITERAL" << std::endl;
+        break;
+
+      case ASTNode::NEGATE:
+        std::cout << "NEGATE" << std::endl;
+        break;
+      case ASTNode::LOGICAL_NOT:
+        std::cout << "LOGICAL_NOT" << std::endl;
+        break;
+      case ASTNode::EXPONENT:
+        std::cout << "EXPONENT" << std::endl;
+        break;
+      case ASTNode::AND:
+        std::cout << "AND" << std::endl;
+        break;
+      case ASTNode::OR:
+        std::cout << "OR" << std::endl;
+        break;
+      case ASTNode::EQUALITY:
+        std::cout << "EQUALITY" << std::endl;
+        break;
+      case ASTNode::NON_EQUALITY:
+        std::cout << "NON_EQUALITY" << std::endl;
+        break;
+      case ASTNode::LESS:
+        std::cout << "LESS" << std::endl;
+        break;
+      case ASTNode::LESS_EQUAL:
+        std::cout << "LESS_EQUAL" << std::endl;
+        break;
+      case ASTNode::GREATER:
+        std::cout << "GREATER" << std::endl;
+        break;
+      case ASTNode::GREATER_EQUAL:
+        std::cout << "GREATER_EQUAL" << std::endl;
+        break;
+      case ASTNode::ADD:
+        std::cout << "ADD" << std::endl;
+        break;
+      case ASTNode::SUBTRACT:
+        std::cout << "SUBTRACT" << std::endl;
+        break;
+      case ASTNode::MULT:
+        std::cout << "MULT" << std::endl;
+        break;
+      case ASTNode::DIV:
+        std::cout << "DIV" << std::endl;
+        break;
+      case ASTNode::MOD:
+        std::cout << "MOD" << std::endl;
         break;
     }
 
