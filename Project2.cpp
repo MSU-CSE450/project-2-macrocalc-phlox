@@ -356,8 +356,18 @@ class MacroCalc {
     return left;
   }
 
-  double ParseMult() {
+  double ParseExp(){
     double left = ParsePrim();
+    if(CurToken().lexeme == "**"){
+      UseToken();
+      double right = ParseExp();
+      left = pow(left, right);
+    }
+    return left;
+  }
+
+  double ParseMult() {
+    double left = ParseExp();
     while (CurToken().lexeme == "*" or CurToken().lexeme == "/" or CurToken().lexeme == "**" or CurToken().lexeme == "%") {
       auto op = CurToken().lexeme;
       UseToken(CurToken().id);  // Consume '*', '/', or '**'
@@ -371,9 +381,6 @@ class MacroCalc {
         }
         left /= right;
       } 
-      else if (op == "**") {
-        left = pow(left, right);
-      }
       else if (op == "%") {
         if (right == 0) {
           Error(CurToken(),"Divide by zero");
