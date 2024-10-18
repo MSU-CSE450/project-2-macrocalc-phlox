@@ -105,11 +105,11 @@ class MacroCalc {
   emplex::Token UseToken() { return tokens[token_id++]; }
 
   emplex::Token UseToken(int required_id, std::string err_message = "") {
-    if (CurToken() != required_id) {
+    if (CurToken().id != required_id) {
       if (err_message.size())
-        Error(CurToken(), err_message);
+        Error(CurToken().line_id, err_message);
       else {
-        Error(CurToken(), "Expected token type ", TokenName(required_id),
+        Error(CurToken().line_id, "Expected token type ", TokenName(required_id),
               ", but found ", TokenName(CurToken()));
       }
     }
@@ -127,12 +127,13 @@ class MacroCalc {
   ASTNode MakeVarNode(const emplex::Token& token) {  // Wordlang Stuff
 
     size_t var_id = symbols.GetVarID(token.lexeme);
-    if(var_id == SymbolTable::NO_ID) Error(token.line_id, "Undeclared Variable", token.lexeme);
+    if(var_id == SymbolTable::NO_ID) Error(token.line_id, "Undeclared Variable: ", token.lexeme);
     if (PRINT_DEBUG)
       std::cout << "MakeVarNode var_id found in symbol table: " << var_id
                 << "of lexeme: " << token.lexeme << std::endl;
     assert(var_id < symbols.GetNumVars());
     ASTNode out(ASTNode::VAR);
+    out.SetLineNum(token.line_id);
     out.SetVal(var_id);
     return out;
   }
@@ -267,8 +268,8 @@ class MacroCalc {
                 << std::endl;
     auto var_token = UseToken(emplex::Lexer::ID_Var);
     auto id_token = UseToken(emplex::Lexer::ID_VariableName);
-
-    symbols.AddVar(var_token, id_token.lexeme);
+    ASTNode node(ASTNode::VAR, var_token.line_id);
+    symbols.AddVar(var_token.line_id, id_token.lexeme);
 
     if (UseTokenIf(';')) return ASTNode{};
 
@@ -429,7 +430,7 @@ class MacroCalc {
           CurToken() == emplex::Lexer::ID_Greater ||
           CurToken() == emplex::Lexer::ID_GreaterEqual ||
           CurToken() == emplex::Lexer::ID_LessEqual) {
-          Error(CurToken().line_id, "Comparisons should be non-associative", CurToken().lexeme);
+          Error(CurToken().line_id, "Comparisons should be non-associative");
         }
       switch (token) {
         case emplex::Lexer::ID_Less: {
@@ -566,7 +567,7 @@ class MacroCalc {
       }
 
       default:
-        Error(token, "Expected expression. Found ", TokenName(token), ".");
+        Error(token.line_id, "Expected expression. Found ", TokenName(token), ".");
     }
 
     return ASTNode{};
@@ -582,7 +583,7 @@ class MacroCalc {
           isScope = true;
         } else if (ch == '}') {
           if (!symbols.HasVar(currvar)) {
-            Error(CurToken(), "Variable does not exist");
+            Error(CurToken().line_id, "Variable does not exist");
           }
 
           std::ostringstream out;
@@ -735,7 +736,7 @@ class MacroCalc {
 
         double left = Run(node.GetChild(0));
         double right = Run(node.GetChild(1));
-        if(right == 0) Error(CurToken().line_id, "Division by 0");
+        if(right == 0) Error(node.GetLineNum(), "Division by 0");
 
         return left / right;
         break;
@@ -748,7 +749,7 @@ class MacroCalc {
 
         double left = Run(node.GetChild(0));
         double right = Run(node.GetChild(1));
-        if(right == 0) Error(CurToken().line_id, "Mod by 0");
+        if(right == 0) Error(node.GetLineNum(), "Mod by 0");
         return fmod(left, right);
         break;
       }

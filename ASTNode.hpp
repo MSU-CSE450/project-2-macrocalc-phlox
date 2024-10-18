@@ -46,16 +46,17 @@ private:
   double val{0.0};
   std::string literal = "";
   std::vector<ASTNode> children{};
+  size_t line_num;
 
 
 public:
   // CONSTRUCTORS, ETC HERE.
-  ASTNode(Type t) : type(t) { ; }
+  ASTNode(Type t, size_t line = 0) : type(t), line_num(line) { ; }
 
-  ASTNode(Type type, ASTNode child) : type(type) { AddChild(child); }
+  ASTNode(Type type, ASTNode child, size_t line = 0) : type(type), line_num(line) { AddChild(child); }
 
-  ASTNode(Type type, ASTNode child1, ASTNode child2)
-    : type(type) { AddChild(child1); AddChild(child2); }
+  ASTNode(Type type, ASTNode child1, ASTNode child2, size_t line = 0)
+    : type(type), line_num(line) { AddChild(child1); AddChild(child2); }
 
   ASTNode() = default;
 
@@ -97,7 +98,8 @@ public:
 
   std::string GetLiteral() const { return literal; }
 
-  
+  size_t GetLineNum() const { return line_num; }
 
+  void SetLineNum(size_t line){ line_num = line; }
 
 };
