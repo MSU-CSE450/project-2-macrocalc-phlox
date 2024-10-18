@@ -397,6 +397,12 @@ class MacroCalc {
     else if (CurToken().id == emplex::Lexer::ID_VariableName) {
       std::string varName = CurToken().lexeme;
       UseToken(emplex::Lexer::ID_VariableName);
+      if (CurToken().lexeme == "=") {
+        UseToken(emplex::Lexer::ID_Equal);  // Consume the '='
+        double value = ParseExpression();  
+        symbols.SetValue(varName, value);  
+        return value; 
+      }
       if (!symbols.HasVar(varName)) {
         Error(token_id, "Undefined variable: ", varName);
       }
