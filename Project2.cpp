@@ -160,6 +160,8 @@ class MacroCalc {
         return ParsePrint();
         break;
       case Lexer::ID_EOL:
+        //std::cout << "BING" << std::endl;
+        UseToken(Lexer::ID_EOL);
         return ASTNode{};
         break;
 
@@ -168,9 +170,27 @@ class MacroCalc {
         break;
       }
 
+      case Lexer::ID_StartScope: {
+        return ParseStatementBlock();
+      }
+
+
+
       default:
         return ParseExpression();
     }
+  }
+
+  ASTNode ParseStatementBlock() {
+    ASTNode out_node{ASTNode::STATEMENT_BLOCK};
+    UseToken(emplex::Lexer::ID_StartScope);
+    symbols.IncScope();
+    while (CurToken() != emplex::Lexer::ID_Endscope) {
+      out_node.AddChild(ParseStatement());
+    }
+    symbols.DecScope();
+    UseToken(emplex::Lexer::ID_Endscope);
+    return out_node;
   }
 
   ASTNode ParseIf() {}
