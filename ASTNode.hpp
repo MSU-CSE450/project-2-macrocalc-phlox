@@ -34,7 +34,9 @@ public:
     LESS,
     LESS_EQUAL,
     GREATER,
-    GREATER_EQUAL
+    GREATER_EQUAL,
+    IF,
+    WHILE
 
 
   };

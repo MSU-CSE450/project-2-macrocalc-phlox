@@ -160,7 +160,7 @@ class MacroCalc {
         return ParsePrint();
         break;
       case Lexer::ID_EOL:
-        //std::cout << "BING" << std::endl;
+        // std::cout << "BING" << std::endl;
         UseToken(Lexer::ID_EOL);
         return ASTNode{};
         break;
@@ -174,7 +174,12 @@ class MacroCalc {
         return ParseStatementBlock();
       }
 
-
+      case Lexer::ID_If: {
+        return ParseIf();
+      }
+      case Lexer::ID_While: {
+        return ParseWhile();
+      }
 
       default:
         return ParseExpression();
@@ -193,9 +198,32 @@ class MacroCalc {
     return out_node;
   }
 
-  ASTNode ParseIf() {}
+  ASTNode ParseIf() {
+    UseToken(emplex::Lexer::ID_If);
+    UseToken(emplex::Lexer::ID_StartCondition, "Expected (");
 
-  ASTNode ParseWhile() {}
+    auto left = ParseExpression();
+    UseToken(emplex::Lexer::ID_EndCondition, "Expected )");
+
+    auto right = ParseStatement();
+
+    ASTNode out_node(ASTNode::IF, left, right);
+
+    return out_node;
+  }
+
+  ASTNode ParseWhile() {
+    UseToken(emplex::Lexer::ID_While);
+    UseToken(emplex::Lexer::ID_StartCondition, "Expected (");
+
+    auto left = ParseExpression();
+    UseToken(emplex::Lexer::ID_EndCondition, "Expected )");
+    auto right = ParseStatement();
+
+    ASTNode out_node(ASTNode::WHILE, left, right);
+
+    return out_node;
+  }
   ASTNode ParsePrint() {
     if (PRINT_DEBUG)
       std::cout << "ParsePrint called CurToken: " << CurToken().lexeme
@@ -840,6 +868,31 @@ class MacroCalc {
 
         break;
       }
+      case ASTNode::IF: {
+        if (PRINT_DEBUG) std::cout << "Run: IF case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        double left = Run(node.GetChild(0));
+
+        if (left != 0.0) {
+          Run(node.GetChild(1));
+        }
+
+        break;
+      }
+
+      case ASTNode::WHILE: {
+        if (PRINT_DEBUG) std::cout << "Run: WHILE case" << std::endl;
+
+        assert(node.GetChildren().size() == 2);
+
+        while(Run(node.GetChild(0)) != 0.0) {
+          Run(node.GetChild(1));
+        }
+
+        break;
+      }
     }
 
     return 0.0;
@@ -923,6 +976,12 @@ class MacroCalc {
         break;
       case ASTNode::MOD:
         std::cout << "MOD" << std::endl;
+        break;
+      case ASTNode::IF:
+        std::cout << "IF" << std::endl;
+        break;
+      case ASTNode::WHILE:
+        std::cout << "WHILE" << std::endl;
         break;
     }
 
