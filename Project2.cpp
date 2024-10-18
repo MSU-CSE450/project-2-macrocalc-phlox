@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <iomanip>
 
 // Below are some suggestions on how you might want to divide up your project.
 // You may delete this and divide it up however you like.
@@ -208,14 +209,12 @@ class MacroCalc {
     auto right = ParseStatement();
     ASTNode out_node(ASTNode::IF, left, right);
 
-    if(CurToken() == emplex::Lexer::ID_Else) {
+    if (CurToken() == emplex::Lexer::ID_Else) {
       UseToken(emplex::Lexer::ID_Else);
 
       ASTNode else_statement = ParseStatement();
       out_node.AddChild(else_statement);
     }
-
-
 
     return out_node;
   }
@@ -563,6 +562,53 @@ class MacroCalc {
     return ASTNode{};
   }
 
+  std::string FillInLiteralVariables(std::string in) {
+    bool isScope = false;
+    std::string output = "";
+    std::string currvar = "";
+    for (auto ch : in) {
+      if (ch != '"') {
+        if (ch == '{') {
+          isScope = true;
+        } else if (ch == '}') {
+          if (!symbols.HasVar(currvar)) {
+            Error(CurToken(), "Variable does not exist");
+          }
+
+          std::ostringstream out;
+          out << std::fixed << std::setprecision(5) << symbols.VarValue(symbols.GetVarID(currvar));
+
+          std::string intermediate = out.str();
+          int i = intermediate.size();
+          
+          //int i = std::to_string(symbols.VarValue(symbols.GetVarID(currvar)))
+                      //.size();
+          //std::string intermediate =
+              //std::to_string(symbols.VarValue(symbols.GetVarID(currvar)));
+          std::string last_dig = "";
+          while (intermediate.back() == '0') {
+            if (intermediate.back() == '0') {
+              intermediate.pop_back();
+            }
+          }
+          last_dig = intermediate.back();
+          if (last_dig == ".") {
+            intermediate.pop_back();
+          }
+          output += intermediate;
+
+          currvar = "";
+          isScope = false;
+        } else if (isScope == false) {
+          output += ch;
+        } else {
+          currvar += ch;
+        }
+      }
+    }
+    return output;
+  }
+
   double Run(ASTNode& node) {
     switch (node.NodeType()) {
       case ASTNode::EMPTY: {
@@ -630,7 +676,9 @@ class MacroCalc {
 
       case ASTNode::PRINT_LITERAL:
         if (PRINT_DEBUG) std::cout << "Run: PRINT_LITERAL case" << std::endl;
-        std::cout << node.GetLiteral() << std::endl;
+        // std::cout << node.GetLiteral() << std::endl;
+        std::cout << FillInLiteralVariables(node.GetLiteral()) << std::endl;
+
         break;
       case ASTNode::ADD: {
         if (PRINT_DEBUG) std::cout << "Run: ADD case" << std::endl;
@@ -885,7 +933,7 @@ class MacroCalc {
 
         if (left != 0.0) {
           Run(node.GetChild(1));
-        } else if(node.GetChildren().size() > 2){
+        } else if (node.GetChildren().size() > 2) {
           Run(node.GetChild(2));
         }
 
@@ -897,7 +945,7 @@ class MacroCalc {
 
         assert(node.GetChildren().size() == 2);
 
-        while(Run(node.GetChild(0)) != 0.0) {
+        while (Run(node.GetChild(0)) != 0.0) {
           Run(node.GetChild(1));
         }
 
