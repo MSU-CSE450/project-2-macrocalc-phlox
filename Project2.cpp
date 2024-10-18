@@ -385,6 +385,10 @@ class MacroCalc {
   }
   // Parse primary expressions (e.g., numbers, variables, or parenthesized expressions)
   double ParsePrim() {
+    if (CurToken().lexeme == "-") {
+        UseToken();  // Consume the '-'
+        return -ParsePrim();  // Negate the next primary expression
+    }
     if (CurToken().id == emplex::Lexer::ID_Value) {
       double value = std::stod(CurToken().lexeme);  // Convert token to double
       UseToken(emplex::Lexer::ID_Value);  // Consume the numeric value token
